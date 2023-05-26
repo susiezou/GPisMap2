@@ -66,6 +66,7 @@
 #define GPISMAP_OBS_VAR_THRE      0.1
 #define GPISMAP_SENSOR_OFFSET_0   0.08  // the hokuyo sensor position (0.08, 0) on a turtlebot for simulation
 #define GPISMAP_SENSOR_OFFSET_1   0.0   // 
+#define M_PI					  3.14159265358979323846
 #define GPISMAP_ANGLE_OBS_LIMIT_0 (-135.0*M_PI/180.0)
 #define GPISMAP_ANGLE_OBS_LIMIT_1 (135.0*M_PI/180.0)
 #define GPISMAP_MIN_POS_NOISE     1e-2
@@ -74,7 +75,7 @@
 #define GPISMAP_MAP_NOISE         1e-2
 
 /* GPisMap3 */
-#define GPISMAP3_MAX_RANGE   4e0
+#define GPISMAP3_MAX_RANGE   7e1
 #define GPISMAP3_MIN_RANGE   4e-1
 
 /* delx: numerical step delta (e.g. surface normal sampling)
@@ -85,7 +86,7 @@
  */
 #define GPISMAP3_DELX           1e-3
 #define GPISMAP3_FBIAS          0.2
-#define GPISMAP3_OBS_SKIP       2
+#define GPISMAP3_OBS_SKIP       1
 #define GPISMAP3_OBS_VAR_THRE   0.04
 #define GPISMAP3_MIN_POS_NOISE  1e-3
 #define GPISMAP3_MIN_GRAD_NOISE 1e-2

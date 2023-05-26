@@ -18,6 +18,8 @@ def _load_lib():
 
     if platform.system() == 'Linux':
         path_to_so_file = os.path.join(lib_path,'build/libgpismap.so')
+    elif platform.system() == 'Windows':
+        path_to_so_file = os.path.join(lib_path,'build/gpismap_Dll.dll')    # release version
     else:
         raise BaseException("unsupported system: " + platform.system())
 

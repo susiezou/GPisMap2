@@ -22,6 +22,7 @@
 #include <chrono>
 #include <thread>
 #include "params.h"
+#include <array>
 
 static float Rtimes = (float)GPISMAP3_RTIMES;
 static float C_leng = (float)GPISMAP3_TREE_CLUSTER_HALF_LENGTH;
@@ -46,7 +47,7 @@ static inline float saturate(float val, float min_val, float max_val)
 }
 
 static std::array<float,9> quat2dcm(float q[4]){
-    std::array<float,9> dcm;
+    std::array<float, 9> dcm;
     dcm[0] = q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3];
     dcm[1] = 2.0*(q[1]*q[2] + q[0]*q[3]);
     dcm[2] = 2.0*(q[1]*q[3] - q[0]*q[2]);
@@ -727,6 +728,7 @@ void GPisMap3::evalPoints(){
             th.join();
     }
 }
+// zqq modify
 void GPisMap3::evalPoints_kernel(int thread_idx,
                                 int start_idx,
                                 int end_idx){
@@ -790,8 +792,8 @@ void GPisMap3::evalPoints_kernel(int thread_idx,
             Yperturb[i] = obs_valid_xyzlocal[k3+1] + setting.delx*Yperturb[i];
             Zperturb[i] = obs_valid_xyzlocal[k3+2] + setting.delx*Zperturb[i];
 
-            vu(0,0) = Yperturb[i]/Zperturb[i];
-            vu(1,0) = Xperturb[i]/Zperturb[i];
+            vu(0, 0) = Yperturb[i] / Zperturb[i];
+            vu(1, 0) = Xperturb[i] / Zperturb[i];
            // std::cout << vu << std::endl;
             gpo->test(vu,rinv0,var);
 
