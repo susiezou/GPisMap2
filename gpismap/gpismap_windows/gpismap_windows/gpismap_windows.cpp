@@ -18,8 +18,8 @@ float* read_bin(const char* filepath, long& file_size ) {
         fread(buffer, sizeof(float), file_size, file);
 
         // Process the binary data (in this case, print the values)
-        for (long i = 0; i < file_size; i++) {
-            //printf("%f\n", buffer[i]);
+        for (long i = 0; i < 12; i++) {
+           // printf("%f\n", buffer[i]);
         }
 
         // Cleanup
@@ -88,7 +88,7 @@ int main()
     int succeed = update_gpm3d(gm, data, fsize, pose);
     delete[] data;
     float result[200000] = {-1};
-    int flag = test_gpm3d(gm, testdata, 3, test_size, result);
+    int flag = test_gpm3d(gm, testdata, 3, 3000, result);
     return  1;
 
 }
