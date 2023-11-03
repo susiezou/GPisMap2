@@ -127,3 +127,39 @@ int get_samples_gpm3d(GPM3Handle gh, float * x,  int dim,  int leng, bool grad, 
     }
     return 0;
 }
+
+//////// App GP /////////
+int create_gp_func(GPFUNHandle *gh, float scale, float noise) {
+    *gh = new AppGPIS(scale, noise);
+    return 1;
+}
+int update_gp(GPFUNHandle gh, float* data, float* p_sig, int N) {
+    if (gh != NULL) {
+        gh->train(data, p_sig, N);
+        return 1;
+    }
+    return 0;
+}
+
+int test_gp(GPFUNHandle gh, float* x, float* p_sig, int M, float* val, float* var) {
+    if (gh != NULL) {
+        gh->test(x, p_sig, M, val, var);
+        return 1;
+    }
+    return 0;
+}
+
+int reset_gp(GPFUNHandle gh) {
+    if (gh != NULL) {
+        gh->reset();
+    }
+    return 1;
+}
+
+int delete_gp_instance(GPFUNHandle gh) {
+    if (gh != NULL) {
+        delete gh;
+        gh = NULL;
+    }
+    return 1;
+}

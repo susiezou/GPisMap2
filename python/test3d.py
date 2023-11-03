@@ -123,9 +123,10 @@ def main():
     filepath = "C:/Users/zou/source/repos/susiezou/ransac_app/results_0428_amk_new/"
     buildings = load_map(filepath, id=8)
     t_record = {}
-    t_record['train'] = []; t_record['test'] = []; t_record['train_number'] = [];
-    t_record['test_number'] = [];
     t_record['building'] = []
+    t_record['train'] = []
+    t_record['test'] = []; t_record['test_number'] = []
+
 
     gp = GPisMap3D()
 
@@ -139,8 +140,8 @@ def main():
         test_xyz = np.array(o3d.io.read_point_cloud("C:/Users/zou/data/localization/julia_map/building_seg/" + str(building[0]) +
                                     "/output/bgk/resolution_0.05/test_pts.pcd").points)
         t_train = {}
-        t_record['train'] = []
-        t_record['train_number'] = []
+        t_train['train'] = []
+        t_train['train_number'] = []
         for faca in faca_group:
             pts_global = faca.pts_local @ (faca.trans_para.uvk).T
             trans_local = np.mean(faca.pts_local, axis=0).reshape(1, 3) + [f, 0, 0]
@@ -167,8 +168,10 @@ def main():
 
             # testing:
             # test_xyz = generate_test_point(I, f, tr, faca.trans_para, max_resol=0.05, inside_num=2)
-
+        tic = time.perf_counter()
         sdf, var = show_mesh_3d(gp, (test_xyz[:, 0], test_xyz[:,1], test_xyz[:, 2]))
+        toc = time.perf_counter()
+
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(test_xyz)  # ["positions"] = o3d.core.Tensor(world_xyz)
         world_n = test_xyz - 0
@@ -178,10 +181,15 @@ def main():
         # save .pcd
         pcd.translate(faca.trans_para.trans)
         o3d.io.write_point_cloud(gp_cloud_dir + "pc_depth_GPIS.pcd", pcd)
+        t_record['building'].append(building[0])
+        t_record['train'].append(t_train)
+        t_record['test'].append(toc - tic)
+        t_record['test_number'].append(len(test_xyz))
 
         gp.reset()
     input("Press Enter to continue...")
-
+    with open(filepath + 'time_record_GPIS.pkl', 'wb') as fp:
+        pickle.dump(t_record, fp)
 
     input("Press Enter to end...")
 

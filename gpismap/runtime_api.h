@@ -7,6 +7,7 @@
 
 #include "GPisMap.h"
 #include "GPisMap3.h"
+#include "AppGPIS.h"
 
 
 
@@ -36,6 +37,11 @@ IMPORT_DLL int test_gpm3d(GPM3Handle gh, float * x,  int dim,  int leng, float* 
 IMPORT_DLL int get_sample_count_gpm3d(GPM3Handle gh);
 IMPORT_DLL int get_samples_gpm3d(GPM3Handle gh, float * x,  int dim,  int leng, bool grad, bool var);
 
-
+//APP GP
+IMPORT_DLL int create_gp_func(GPFUNHandle* gh, float scale=0.04, float noise=0.02);
+IMPORT_DLL int update_gp(GPFUNHandle gh, float* data, float* p_sig, int N);
+IMPORT_DLL int test_gp(GPFUNHandle gh, float* x, float* p_sig, int M, float* val, float* var);
+IMPORT_DLL int reset_gp(GPFUNHandle gh);
+IMPORT_DLL int delete_gp_instance(GPFUNHandle gh);
 
 #endif

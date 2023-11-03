@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\AppGPIS.h" />
     <ClInclude Include="..\..\include\covFnc.h" />
     <ClInclude Include="..\..\include\GPisMap.h" />
     <ClInclude Include="..\..\include\GPisMap3.h" />
@@ -29,9 +30,11 @@
     <ClInclude Include="..\..\include\quadtree.h" />
     <ClInclude Include="..\..\include\strct.h" />
     <ClInclude Include="..\..\runtime_api.h" />
+    <ClInclude Include="CustomizeGPIS.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\runtime_api.cc" />
+    <ClCompile Include="..\..\src\AppGPIS.cpp" />
     <ClCompile Include="..\..\src\covFnc.cpp" />
     <ClCompile Include="..\..\src\GPisMap.cpp" />
     <ClCompile Include="..\..\src\GPisMap3.cpp" />
@@ -40,6 +43,7 @@
     <ClCompile Include="..\..\src\OnGPIS.cpp" />
     <ClCompile Include="..\..\src\quadtree.cpp" />
     <ClCompile Include="..\..\src\strct.cpp" />
+    <ClCompile Include="CustomizeGPIS.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
