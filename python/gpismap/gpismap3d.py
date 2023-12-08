@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 import ctypes
 import numpy as np
-from .c_lib import _LIB , as_float_c_array
+from .c_lib import _LIB, as_float_c_array, loggpis
 
 
 class GPisMap3D():
@@ -33,6 +33,7 @@ class GPisMap3D():
         gm = ctypes.c_void_p()
         _LIB.create_gpm3d_instance(ctypes.byref(gm))
         self.gpmap = gm
+        self.loggp = loggpis
 
     def set_cam_param(self, fx: float, fy: float, cx: float, cy: float, width:int, height: int):
         """

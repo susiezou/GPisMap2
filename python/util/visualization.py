@@ -147,7 +147,7 @@ def show_map_2d(gp, meshgrid_xy):
     plt.show()
 
 
-def show_mesh_3d(gp3d, meshgrid_xyz, var_thre=0.1, plt_show=False):
+def show_mesh_3d(gp3d, meshgrid_xyz, bias=0.2,var_thre=0.1, plt_show=False):
     xg, yg, zg = meshgrid_xyz
     xtest = np.stack((xg.flatten(), yg.flatten(), zg.flatten()), axis=-1).astype(np.float32)
 
@@ -161,7 +161,7 @@ def show_mesh_3d(gp3d, meshgrid_xyz, var_thre=0.1, plt_show=False):
     # f[:,6] : grad y variance
     # f[:,7] : grad z variance  
     high_confidence_index = np.reshape(np.array(f[:,4]<var_thre),xg.shape)
-    sdf=np.reshape(f[:,0]+0.2,xg.shape)
+    sdf=np.reshape(f[:,0]+bias,xg.shape)
     var = np.reshape(f[:,4],xg.shape)
 
     if plt_show:

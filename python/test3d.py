@@ -116,9 +116,15 @@ def generate_test_point(I, f, tr, trans_para, max_resol=0.05, inside_num=2):
             pt_all = pt_all + pcd
     return np.array(pt_all.points)
 
-def main():
 
-    max_resol = 0.025
+def v_to_sdf(v, vvar, lamda):
+    sdf = np.exp(-lamda * v)
+    a2 = lamda **2 / (v ** 2)
+    var = np.multiply(a2,  vvar)
+    return sdf, var
+
+
+def main():
 
     filepath = "C:/Users/zou/source/repos/susiezou/ransac_app/results_0428_amk_new/"
     buildings = load_map(filepath, id=8)
@@ -126,9 +132,13 @@ def main():
     t_record['building'] = []
     t_record['train'] = []
     t_record['test'] = []; t_record['test_number'] = []
+    tname = 'GPIS'; bias = 0.2
 
 
     gp = GPisMap3D()
+    if gp.loggp:
+        tname = 'LogGPIS'
+        bias = 0
 
     for building in (buildings):
         print(f"#frame: {building[0]}")
@@ -169,9 +179,9 @@ def main():
             # testing:
             # test_xyz = generate_test_point(I, f, tr, faca.trans_para, max_resol=0.05, inside_num=2)
         tic = time.perf_counter()
-        sdf, var = show_mesh_3d(gp, (test_xyz[:, 0], test_xyz[:,1], test_xyz[:, 2]))
+        sdf, var = show_mesh_3d(gp, (test_xyz[:, 0], test_xyz[:,1], test_xyz[:, 2]), bias=bias)
         toc = time.perf_counter()
-
+        print(f"Test time: {toc - tic:0.4f} seconds...")
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(test_xyz)  # ["positions"] = o3d.core.Tensor(world_xyz)
         world_n = test_xyz - 0
@@ -180,7 +190,7 @@ def main():
         pcd.normals = o3d.utility.Vector3dVector(world_n)
         # save .pcd
         pcd.translate(faca.trans_para.trans)
-        o3d.io.write_point_cloud(gp_cloud_dir + "pc_depth_GPIS.pcd", pcd)
+        o3d.io.write_point_cloud(gp_cloud_dir + "pc_depth_"+tname+".pcd", pcd)
         t_record['building'].append(building[0])
         t_record['train'].append(t_train)
         t_record['test'].append(toc - tic)
@@ -188,7 +198,8 @@ def main():
 
         gp.reset()
     input("Press Enter to continue...")
-    with open(filepath + 'time_record_GPIS.pkl', 'wb') as fp:
+
+    with open(filepath + 'time_record_' + tname + '.pkl', 'wb') as fp:
         pickle.dump(t_record, fp)
 
     input("Press Enter to end...")

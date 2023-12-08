@@ -62,7 +62,7 @@
  * obs_skip: use every 'skip'-th pixel
  */
 #define GPISMAP_DELX              1e-2
-#define GPISMAP_FBIAS             1.0 //0.2
+#define GPISMAP_FBIAS             -1.0 //0.2
 #define GPISMAP_OBS_VAR_THRE      0.1
 #define GPISMAP_SENSOR_OFFSET_0   0.08  // the hokuyo sensor position (0.08, 0) on a turtlebot for simulation
 #define GPISMAP_SENSOR_OFFSET_1   0.0   // 

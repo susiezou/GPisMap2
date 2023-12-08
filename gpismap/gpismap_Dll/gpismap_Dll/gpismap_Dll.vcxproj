@@ -30,7 +30,6 @@
     <ClInclude Include="..\..\include\quadtree.h" />
     <ClInclude Include="..\..\include\strct.h" />
     <ClInclude Include="..\..\runtime_api.h" />
-    <ClInclude Include="CustomizeGPIS.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\runtime_api.cc" />
@@ -43,7 +42,6 @@
     <ClCompile Include="..\..\src\OnGPIS.cpp" />
     <ClCompile Include="..\..\src\quadtree.cpp" />
     <ClCompile Include="..\..\src\strct.cpp" />
-    <ClCompile Include="CustomizeGPIS.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

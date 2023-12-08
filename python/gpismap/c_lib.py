@@ -9,6 +9,12 @@ import ctypes
 import platform
 import multiprocessing
 
+loggpis = True
+if loggpis:
+    mapdll = 'loggpis_Dll.dll'
+else:
+    mapdll = 'gpismap_Dll.dll'
+
 
 def _load_lib():
     """ Load library in build/lib. """
@@ -19,7 +25,7 @@ def _load_lib():
     if platform.system() == 'Linux':
         path_to_so_file = os.path.join(lib_path,'build/libgpismap.so')
     elif platform.system() == 'Windows':
-        path_to_so_file = os.path.join(lib_path,'build/gpismap_Dll.dll')    # release version
+        path_to_so_file = os.path.join(lib_path,'build/' + mapdll)    # release version
     else:
         raise BaseException("unsupported system: " + platform.system())
 
