@@ -1,5 +1,6 @@
 #include "runtime_api.h"
-
+#include <iostream>
+#include <fstream>
 /// GPisMap (2d)
 int create_gpm_instance(GPMHandle *gh){
     *gh = new GPisMap;
@@ -128,9 +129,9 @@ int get_samples_gpm3d(GPM3Handle gh, float * x,  int dim,  int leng, bool grad, 
     return 0;
 }
 
-//////// App GP /////////
-int create_gp_func(GPFUNHandle *gh, float scale, float noise) {
-    *gh = new AppGPIS(scale, noise);
+//////// App GP func /////////
+int create_gp_func(GPFUNHandle *gh) {
+    *gh = new AppGPIS(0.04, 0.01);
     return 1;
 }
 int update_gp(GPFUNHandle gh, float* data, float* p_sig, int N) {

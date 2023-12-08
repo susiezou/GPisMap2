@@ -1,6 +1,8 @@
 #include "AppGPIS.h"
 #include "covFnc.h"
 #include <Eigen/Cholesky>
+#include <iostream>
+#include <fstream>
 
 #define SQRT_3  1.732051
 
@@ -81,8 +83,6 @@ void AppGPIS::train(const vecNode3& samples) {
         EMatrixX K = matern32_sparse_deriv1(x, gradflag, param.scale, sigx, siggrad);
         EMatrixX K_dyn = K.cwiseProduct(K_p);
 
-        // conta
-
         L = K_dyn.llt().matrixL();
 
         alpha = y;
@@ -90,7 +90,6 @@ void AppGPIS::train(const vecNode3& samples) {
         L.transpose().template triangularView<Eigen::Upper>().solveInPlace(alpha);
 
         trained = true;
-
     }
     return;
 }
@@ -100,7 +99,6 @@ void AppGPIS::train(const float* samples, float* p_sig, int N) {
     // samples = N * [x,y,z,mu,nx,ny,nz,noise_n]
     // p_sig = prior sigma
     reset();
-
     int dim = 3;
 
     if (N > 0) {
@@ -161,9 +159,6 @@ void AppGPIS::train(const float* samples, float* p_sig, int N) {
         EMatrixX K = matern32_sparse_deriv1(x, gradflag, param.scale, sigx, siggrad);
         EMatrixX K_dyn = K.cwiseProduct(K_p);
 
-        // conta
-        
-
         L = K_dyn.llt().matrixL();
 
         alpha = y;
@@ -171,7 +166,24 @@ void AppGPIS::train(const float* samples, float* p_sig, int N) {
         L.transpose().template triangularView<Eigen::Upper>().solveInPlace(alpha);
 
         trained = true;
+        // log
+        /*std::ofstream logFile("C:\\Users\\zou\\source\\repos\\susiezou\\GPisMap2\\build\\training_logfile.txt", std::ios::app);
+        if (!logFile.is_open()) {
+            std::cerr << "Error opening the log file." << std::endl;
+            return;
+        }
 
+        logFile << "This is a log message for training." << std::endl;
+        logFile << "count:" << count << std::endl;
+        logFile << "scale:" << param.scale << "; gradsigk: " << siggrad <<std::endl;
+        logFile << "K_p Matrix:" << std::endl;
+        logFile << K_p << std::endl;
+        logFile << "K Matrix:" << std::endl;
+        logFile << K << std::endl;
+        logFile << "K_dyn Matrix:" << std::endl;
+        logFile << K_dyn << std::endl;
+        logFile << "alpha:" << alpha << std::endl;
+        logFile.close();*/
     }
     return;
 }
@@ -180,6 +192,7 @@ void AppGPIS::train(const float* samples, float* p_sig, int N) {
 void AppGPIS::test(const float* samples, float* p_sig, int M, float* val, float* var) {
 
     if (!isTrained()) {
+        std::cout << "GP Not trained!" << std::endl;
         return;
     }
     int dim = 3;
@@ -202,18 +215,39 @@ void AppGPIS::test(const float* samples, float* p_sig, int M, float* val, float*
     K_p.block(0, 0, nSamples, M) = prior_sig * t_sig.transpose();
     EMatrixX K_dyn = K.block(0,0,K.rows(),M).cwiseProduct(K_p);
 
+    std::ofstream logFile("C:\\Users\\zou\\source\\repos\\susiezou\\GPisMap2\\build\\test_logfile.txt", std::ios::app);
+    if (!logFile.is_open()) {
+        std::cerr << "Error opening the log file." << std::endl;
+        return;
+    }
+
+    logFile << "This is a log message for testing." << std::endl;
+    logFile << "K_row/col:" << K.rows() << "; " << K.cols() << "; K_dyn: " << K_dyn.rows() << "; " << K_dyn.cols() << std::endl;
+    logFile << "K_p Matrix:" << std::endl;
+    logFile << K_p.block(0, 0, 4, 4) << std::endl;
+    logFile << "K Matrix:" << std::endl;
+    logFile << K.block(0, 0, 4, 4) << std::endl;
+    logFile << "K_dyn Matrix:" << std::endl;
+    logFile << K_dyn.block(0, 0, 4, 4) << std::endl;
     // regression
     EVectorX aa = K_dyn.transpose() * alpha;
-    val = aa.data();
+    std::memcpy(val, aa.data(), aa.size() * sizeof(float));
+    logFile << "val:" << std::endl;
+    for (int i = 0; i < aa.size(); ++i) {
+        logFile << "Element " << i << ": " << val[i] << std::endl;
+    }
 
     L.template triangularView<Eigen::Lower>().solveInPlace(K_dyn);
-
+    
     K_dyn = K_dyn.array().pow(2);
     EVectorX v = K_dyn.colwise().sum();
 
     EVectorX vv = t_sig.array().pow(2) + param.noise * param.noise - v.array();
-    var = vv.data();
-   
+    std::memcpy(var, vv.data(), vv.size() * sizeof(float));
+    logFile << "Result vv Matrix:" << std::endl;
+    logFile << vv << std::endl;
+    // log
+    logFile.close();
     return;
 }
 
