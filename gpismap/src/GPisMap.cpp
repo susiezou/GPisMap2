@@ -764,7 +764,7 @@ void GPisMap::test_kernel(int thread_idx,
         int k6 = 6*i;
 
         // query Cs
-        AABB searchbb(xt(0),xt(1), setting.map_scale_param*4.0);
+        AABB searchbb(xt(0),xt(1), setting.map_scale_param*20.0);
         std::vector<QuadTree*> quads;
         std::vector<float>    sqdst;
         t->QueryNonEmptyLevelC(searchbb,quads,sqdst);
