@@ -118,8 +118,10 @@ def generate_test_point(I, f, tr, trans_para, max_resol=0.05, inside_num=2):
 
 
 def v_to_sdf(v, vvar, lamda):
-    sdf = np.exp(-lamda * v)
-    a2 = lamda **2 / (v ** 2)
+    abn = v == 0
+    v[abn] = 1e-6
+    sdf = -1/lamda * np.log(v)  # np.exp(-lamda * d)
+    a2 = (1/lamda)**2 / (v ** 2)
     var = np.multiply(a2,  vvar)
     return sdf, var
 
@@ -139,6 +141,18 @@ def main():
     if gp.loggp:
         tname = 'LogGPIS'
         bias = 0
+    # for building in (buildings):
+    #     print(f"#frame: {building[0]}")
+    #     gp_cloud_dir = filepath + str(building[0]) + '/output/gpismap/meta_data/'
+    #     pcd = o3d.io.read_point_cloud(gp_cloud_dir + "pc_depth_" + tname + ".pcd")
+    #     n = np.array(pcd.normals)
+    #     v = n[:, 0]
+    #     vv = n[:, 1]
+    #     sdf, var = v_to_sdf(v, vv, 20)
+    #     n[:, 0] = sdf
+    #     n[:, 1] = var
+    #     pcd.normals = o3d.utility.Vector3dVector(n)
+    #     o3d.io.write_point_cloud(gp_cloud_dir + "pc_depth_" + tname + ".ply", pcd)
 
     for building in (buildings):
         print(f"#frame: {building[0]}")

@@ -20,6 +20,7 @@ int set_gpm3d_camparam(GPM3Handle gh,
     int w,
     int h);
 int update_gpm3d(GPM3Handle gh, float* depth, int numel, float* pose); // pose[12]
+int update_scan3d(GPM3Handle gh, float* depth, int numel, float* pose);
 int test_gpm3d(GPM3Handle gh, float* x, int dim, int leng, float* res);
 int get_sample_count_gpm3d(GPM3Handle gh);
 int get_samples_gpm3d(GPM3Handle gh, float* x, int dim, int leng, bool grad, bool var);

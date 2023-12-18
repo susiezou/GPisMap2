@@ -19,7 +19,7 @@ float* read_bin(const char* filepath, long& file_size ) {
 
         // Process the binary data (in this case, print the values)
         for (long i = 0; i < 12; i++) {
-           // printf("%f\n", buffer[i]);
+            printf("%f\n", buffer[i]);
         }
 
         // Cleanup
@@ -65,15 +65,15 @@ double* read_bin_double(const char* filepath, long& file_size) {
 int main()
 {
     std::cout << "Hello World!\n";
-    const char* datapath = "C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/depth/391.bin";
-    const char* posepath = "C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/pose/391pose.bin";
+    const char* datapath = "C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/depth/f670.bin";
+    const char* posepath = "C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/pose/f670pose.bin";
     long fsize, test_size, posesize=12, camsize=6;
     float* cam = read_bin("C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/391cam.bin", camsize);
-    fsize = cam[4] * cam[5];
+    fsize = 13604;// cam[4] * cam[5];
     float* pose = read_bin(posepath, posesize);
     float* data = read_bin(datapath, fsize);
     test_size = fsize * 3;
-    float* testdata = read_bin("C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/depth/391test.bin", test_size);
+    float* testdata = read_bin("C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/depth/f670test.bin", test_size);
     
     GPM3Handle gm = nullptr;
     create_gpm3d_instance(&gm);
@@ -85,7 +85,7 @@ int main()
         int(cam[4]), int(cam[5])
     );
 
-    int succeed = update_gpm3d(gm, data, fsize, pose);
+    int succeed = update_scan3d(gm, data, fsize, pose);
     delete[] data;
     float result[200000] = {-1};
     int flag = test_gpm3d(gm, testdata, 3, 3000, result);

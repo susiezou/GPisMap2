@@ -107,6 +107,38 @@ class GPisMap3D():
             )
         assert res == 1
 
+    def update_scan(self, depth:np.ndarray, position:np.ndarray , rotation:np.ndarray):
+        """
+        Update the map from depth camera-like observation
+
+        Parameters
+        ----------
+            depth : np.ndarray
+                depth values w.r.t the body frame
+
+            position : np.ndarray (3 elements)
+                position of the body in the map frame
+
+            rotation : np.ndarray (flattened, 9 elements)
+                orientation of the body in the map frame
+                flattened rotation matrix
+
+        Returns
+        -------
+
+        """
+
+        assert depth.dtype == np.float32
+        assert position.dtype == np.float32 and rotation.dtype == np.float32
+        assert position.size == 3 and rotation.size == 9
+        pose = np.concatenate((position,rotation),axis=None)
+        res = _LIB.update_scan3d(self.gpmap,
+                as_float_c_array(depth.flatten()),
+                len(depth),
+                as_float_c_array(pose)
+            )
+        assert res == 1
+
     def test(self, test_x:np.ndarray):
         """
         Make inference using the map
