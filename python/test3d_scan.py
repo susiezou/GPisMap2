@@ -14,9 +14,23 @@ from gpismap import GPisMap3D
 from  util.visualization import show_mesh_3d
 
 
+def trans_to_img(pts, resolx=0.00175,resoly=0.00175):
+    miny = np.min(pts[:, 1])
+    minx = np.min(pts[:, 0])
+    cc = np.round((pts[:, 0] - minx) / resolx).astype(int)
+    rr = np.round((pts[:, 1] - miny) / resoly).astype(int)
+    img = np.zeros((rr.max() + 1, cc.max() + 1))
+    img[rr, cc] = pts[:, 2]
+
+    cx = -minx / resolx
+    cy = -miny / resoly
+    return img, [cx, cy], minx, miny
+
+
 def v_to_sdf(v, vvar, lamda):
-    abn = v == 0
-    v[abn] = 1e-6
+    v = np.abs(v)
+    abn = v <= 1e-7
+    v[abn] = 1e-7
     sdf = -1/lamda * np.log(v)  # np.exp(-lamda * v)
     a2 = (1/lamda)**2 / (v ** 2)
     var = np.multiply(a2,  vvar)
@@ -86,10 +100,10 @@ def main():
         bias = 0
 
     for k in frameid:
-        if int(k)<670:
+        if (int(k) <930) or (int(k)>1000):
             continue
-        if int(k)>670:
-            continue
+        rx = 0.00175 * 2
+        ry = 0.0175 * 1
         print(f"#frame: {k}")
         tr = np.array(traj[k]['ego_transformation'])[:3]
         valid = data['frameID'] == int(k)
@@ -100,14 +114,16 @@ def main():
         # rotate azimuth
         a0 = np.arctan2(vec[1], vec[0])
         dataz[:, 0] -= a0
-        valid2 = np.abs(dataz[:, 0]) < 0.45 * 3.14
+        valid2 = np.abs(dataz[:, 0]) < 0.35 * 3.14
+
+        img, cxy, minx, miny = trans_to_img(dataz[valid2], resolx=rx,resoly=ry)
 
         tr = tr.flatten().astype(np.float32)
         Rot = (np.array([[0,1,0],[0,0,1],[1,0,0]]) @
                np.array([[np.cos(-a0), -np.sin(-a0),0],[np.sin(-a0), np.cos(-a0),0], [0, 0, 1]])).flatten().astype(np.float32)
-        gp.set_cam_param(10, 10, 0, 0, 120, 120)
+        gp.set_cam_param(rx, ry, cxy[0], cxy[1], img.shape[1], img.shape[0])
         tic = time.perf_counter()
-        gp.update_scan(dataz[valid2].astype(np.float32), tr, Rot)
+        gp.update_scan(img.astype(np.float32), tr, Rot)
         toc = time.perf_counter()
         print(f"Elapsed time: {toc - tic:0.4f} seconds...")
         t_record['train'].append(toc - tic)

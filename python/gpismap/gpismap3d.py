@@ -75,7 +75,7 @@ class GPisMap3D():
         """
         _LIB.reset_gpm3d(self.gpmap)
 
-    def update(self, depth:np.ndarray, position:np.ndarray , rotation:np.ndarray):
+    def update(self, depth:np.ndarray, position:np.ndarray, rotation:np.ndarray):
         """
         Update the map from depth camera-like observation
 
@@ -134,7 +134,7 @@ class GPisMap3D():
         pose = np.concatenate((position,rotation),axis=None)
         res = _LIB.update_scan3d(self.gpmap,
                 as_float_c_array(depth.flatten()),
-                len(depth),
+                depth.size,
                 as_float_c_array(pose)
             )
         assert res == 1

@@ -118,8 +118,9 @@ def generate_test_point(I, f, tr, trans_para, max_resol=0.05, inside_num=2):
 
 
 def v_to_sdf(v, vvar, lamda):
-    abn = v == 0
-    v[abn] = 1e-6
+    v = np.abs(v)
+    abn = v <= 1e-7
+    v[abn] = 1e-7
     sdf = -1/lamda * np.log(v)  # np.exp(-lamda * d)
     a2 = (1/lamda)**2 / (v ** 2)
     var = np.multiply(a2,  vvar)
@@ -134,8 +135,8 @@ def main():
     t_record['building'] = []
     t_record['train'] = []
     t_record['test'] = []; t_record['test_number'] = []
-    tname = 'GPIS'; bias = 0.2
-
+    tname = 'GPIS'
+    bias = 0.2
 
     gp = GPisMap3D()
     if gp.loggp:
