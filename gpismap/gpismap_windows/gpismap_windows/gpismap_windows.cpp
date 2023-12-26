@@ -68,8 +68,8 @@ int main()
     const char* datapath = "C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/depth/f670.bin";
     const char* posepath = "C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/pose/f670pose.bin";
     long fsize, test_size, posesize=12, camsize=6;
-    float* cam = read_bin("C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/391cam.bin", camsize);
-    fsize = 13604;// cam[4] * cam[5];
+    float* cam = read_bin("C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/f670cam.bin", camsize);
+    fsize = cam[4] * cam[5];
     float* pose = read_bin(posepath, posesize);
     float* data = read_bin(datapath, fsize);
     test_size = fsize * 3;

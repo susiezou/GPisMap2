@@ -289,65 +289,71 @@ bool GPisMap3::preprocData_scan(float* dataz, int N, std::vector<float>& pose)
     std::copy(pose.begin(), pose.begin() + 3, pose_tr.begin());
     std::copy(pose.begin() + 3, pose.end(), pose_R.begin());
 
-    //int n = cam.width / setting.obs_skip;//
-    //int m = cam.height / setting.obs_skip;//
+    int n = cam.width / setting.obs_skip;   // col
+    int m = cam.height / setting.obs_skip;  // row
 
     // preset u- & v- grid if not done
-    if (vu_grid.size() == 0)
-    {
-        vu_grid.resize(2 * N);  // (2 * n * m);//
 
-        for (int k = 0; k< N; k++) {
-            int k3 = 3 * k;
-            int j = 2 * k;
-            vu_grid[j + 1] = std::tan(dataz[k3]); // horizontal: tan(azi)
-        }
-        // hard coded limit
-        u_obs_limit[0] = -std::tan(M_PI * 0.4);
-        u_obs_limit[1] = std::tan(M_PI * 0.4);
-        v_obs_limit[0] = u_obs_limit[0];
-        v_obs_limit[1] = u_obs_limit[1];
+
+    if (cam.width * cam.height != N) {
+        std::cout << "Error: The dimensions do not match!" << std::endl;
+        return false;
     }
 
+    vu_grid.resize(2 * n * m);
+
+    int col = 0;
+    int row = 0;
     // pre-compute 3D cartesian every frame
     obs_numdata = 0;
-    for (int k = 0; k < N; k++) {
+    for (int n_ = 0; n_ < n; n_++) {
+        col = n_ * setting.obs_skip;
+        for (int m_ = 0; m_ < m; m_++) {
+            row = m_ * setting.obs_skip;
+                
+            float azi = (float(col) - cam.cx) * cam.fx; // azi
+            float ele = (float(row) - cam.cy) * cam.fy;  // ele ; f=resolution of angles
+                
+            int j = 2 * (m * n_ + m_);
+            vu_grid[j + 1] = std::tan(azi);
+            vu_grid[j] = std::tan(ele) / std::cos(azi); // vertical
 
-        int k3 = 3 * k;
-        int j = 2 * k;
-        float range = dataz[k3 + 2];
-        float azi = dataz[k3];
-        float ele = dataz[k3 + 1];
-        if (isRangeValid(range))
-        {
-            if (range_obs_max < range) // used for range-search
-                range_obs_max = range;
+            int k = row * cam.width + col;
+            float range = dataz[k];
+            if ((k < N) && isRangeValid(range)) {
+                if (range_obs_max < range) // used for range-search
+                    range_obs_max = range;
 
-            float yloc = std::sin(ele) * range;
-            float r_sub = std::cos(ele) * range;
-            float zloc = std::cos(azi) * r_sub;
-            float u = vu_grid[j + 1]; // x:z
-            float v = yloc / zloc; // y:z
-            float xloc = u * zloc;
+                float u = vu_grid[j + 1]; // x:z
+                float v = vu_grid[j]; // y:z
+                float yloc = std::sin(ele) * range;
+                float zloc = yloc / v;
+                float xloc = u * zloc;
 
-            vu_grid[j] = v; // vertical: tan(ele)
-            obs_valid_u.push_back(u);
-            obs_valid_v.push_back(v);
-            obs_zinv.push_back(1.0 / zloc);
+                obs_valid_u.push_back(u);
+                obs_valid_v.push_back(v);
+                obs_zinv.push_back(1.0 / zloc);
 
-            obs_valid_xyzlocal.push_back(xloc);
-            obs_valid_xyzlocal.push_back(yloc);
-            obs_valid_xyzlocal.push_back(zloc);
-            obs_valid_xyzglobal.push_back(pose_R[0] * xloc + pose_R[3] * yloc + pose_R[6] * zloc + pose_tr[0]);
-            obs_valid_xyzglobal.push_back(pose_R[1] * xloc + pose_R[4] * yloc + pose_R[7] * zloc + pose_tr[1]);
-            obs_valid_xyzglobal.push_back(pose_R[2] * xloc + pose_R[5] * yloc + pose_R[8] * zloc + pose_tr[2]);
-            obs_numdata++;
+                obs_valid_xyzlocal.push_back(xloc);
+                obs_valid_xyzlocal.push_back(yloc);
+                obs_valid_xyzlocal.push_back(zloc);
+                obs_valid_xyzglobal.push_back(pose_R[0] * xloc + pose_R[3] * yloc + pose_R[6] * zloc + pose_tr[0]);
+                obs_valid_xyzglobal.push_back(pose_R[1] * xloc + pose_R[4] * yloc + pose_R[7] * zloc + pose_tr[1]);
+                obs_valid_xyzglobal.push_back(pose_R[2] * xloc + pose_R[5] * yloc + pose_R[8] * zloc + pose_tr[2]);
+                obs_numdata++;
+            }
+            else {
+                obs_zinv.push_back(-1.0);
+            }
         }
-        else {
-            obs_zinv.push_back(-1.0);
-        }
-        
     }
+
+    // limit
+    u_obs_limit[0] = std::tan(-cam.cx * cam.fx);
+    u_obs_limit[1] = std::tan((float(col) - cam.cx) * cam.fx);
+    v_obs_limit[0] = std::tan(-cam.cy * cam.fy);
+    v_obs_limit[1] = std::tan((float(row) - cam.cy) * cam.fy);
+
 
     if (obs_numdata > 1)
         return true;
@@ -1078,7 +1084,7 @@ void GPisMap3::test_kernel(int thread_idx,
         int k8 = 8*i;
 
         // query Cs
-        AABB3 searchbb(xt(0),xt(1),xt(2),C_leng*3.0);
+        AABB3 searchbb(xt(0),xt(1),xt(2),C_leng*30.0);
         std::vector<OcTree*> octs;
         std::vector<float> sqdst;
         t->QueryNonEmptyLevelC(searchbb,octs,sqdst);

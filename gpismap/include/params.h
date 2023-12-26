@@ -75,7 +75,7 @@
 #define GPISMAP_MAP_NOISE         1e-2
 
 /* GPisMap3 */
-#define GPISMAP3_MAX_RANGE   7e1
+#define GPISMAP3_MAX_RANGE   20e1
 #define GPISMAP3_MIN_RANGE   4e-1
 
 /* delx: numerical step delta (e.g. surface normal sampling)
