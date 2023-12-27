@@ -43,7 +43,6 @@
     <ClCompile Include="..\..\src\OnGPIS.cpp" />
     <ClCompile Include="..\..\src\quadtree.cpp" />
     <ClCompile Include="..\..\src\strct.cpp" />
-    <ClCompile Include="CustomizeGPIS.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
