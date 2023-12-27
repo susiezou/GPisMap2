@@ -270,6 +270,120 @@ bool GPisMap3::preprocData(float * dataz, int N, std::vector<float> & pose)
     return false;
 }
 
+bool GPisMap3::preprocData_scan(float* dataz, int N, std::vector<float>& pose)
+{
+    if (dataz == 0 || N < 1)
+        return false;
+
+    obs_valid_xyzlocal.clear();
+    obs_valid_xyzglobal.clear();
+    obs_valid_u.clear();
+    obs_valid_v.clear();
+    obs_zinv.clear();
+
+    range_obs_max = 0.0;
+
+    if (pose.size() != 12)
+        return false;
+
+    std::copy(pose.begin(), pose.begin() + 3, pose_tr.begin());
+    std::copy(pose.begin() + 3, pose.end(), pose_R.begin());
+
+    int n = cam.width / setting.obs_skip;   // col
+    int m = cam.height / setting.obs_skip;  // row
+
+    // preset u- & v- grid if not done
+
+
+    if (cam.width * cam.height != N) {
+        std::cout << "Error: The dimensions do not match!" << std::endl;
+        return false;
+    }
+
+    vu_grid.resize(2 * n * m);
+
+    int col = 0;
+    int row = 0;
+    // pre-compute 3D cartesian every frame
+    obs_numdata = 0;
+    for (int n_ = 0; n_ < n; n_++) {
+        col = n_ * setting.obs_skip;
+        for (int m_ = 0; m_ < m; m_++) {
+            row = m_ * setting.obs_skip;
+
+            float azi = (float(col) - cam.cx) * cam.fx; // azi
+            float ele = (float(row) - cam.cy) * cam.fy;  // ele ; f=resolution of angles
+
+            int j = 2 * (m * n_ + m_);
+            vu_grid[j + 1] = std::tan(azi);
+            vu_grid[j] = std::tan(ele) / std::cos(azi); // vertical
+
+            int k = row * cam.width + col;
+            float range = dataz[k];
+            if ((k < N) && isRangeValid(range)) {
+                if (range_obs_max < range) // used for range-search
+                    range_obs_max = range;
+
+                float u = vu_grid[j + 1]; // x:z
+                float v = vu_grid[j]; // y:z
+                float yloc = std::sin(ele) * range;
+                float zloc = yloc / v;
+                float xloc = u * zloc;
+
+                obs_valid_u.push_back(u);
+                obs_valid_v.push_back(v);
+                obs_zinv.push_back(1.0 / zloc);
+
+                obs_valid_xyzlocal.push_back(xloc);
+                obs_valid_xyzlocal.push_back(yloc);
+                obs_valid_xyzlocal.push_back(zloc);
+                obs_valid_xyzglobal.push_back(pose_R[0] * xloc + pose_R[3] * yloc + pose_R[6] * zloc + pose_tr[0]);
+                obs_valid_xyzglobal.push_back(pose_R[1] * xloc + pose_R[4] * yloc + pose_R[7] * zloc + pose_tr[1]);
+                obs_valid_xyzglobal.push_back(pose_R[2] * xloc + pose_R[5] * yloc + pose_R[8] * zloc + pose_tr[2]);
+                obs_numdata++;
+            }
+            else {
+                obs_zinv.push_back(-1.0);
+            }
+        }
+    }
+
+    // limit
+    u_obs_limit[0] = std::tan(-cam.cx * cam.fx);
+    u_obs_limit[1] = std::tan((float(col) - cam.cx) * cam.fx);
+    v_obs_limit[0] = std::tan(-cam.cy * cam.fy);
+    v_obs_limit[1] = std::tan((float(row) - cam.cy) * cam.fy);
+
+
+    if (obs_numdata > 1)
+        return true;
+
+    return false;
+}
+
+int GPisMap3::update_scan(float* dataz, int N, std::vector<float>& pose)
+{
+    if (!preprocData_scan(dataz, N, pose))
+        return 0;
+
+    // Step 1
+    if (regressObs()) {
+
+        // Step 2
+        updateMapPoints();
+
+        // Step 3
+        addNewMeas();
+
+        // Step 4
+        updateGPs();
+
+        return 1;
+
+    }
+    return 0;
+}
+
 void GPisMap3::update( float * dataz, int N, float pose[12]){
     std::vector<float> pose_vec;
     for (int i=0;i<12;i++)

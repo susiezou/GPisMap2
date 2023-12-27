@@ -6,3 +6,5 @@
 .DS_Store
 build/*
 jnb/*
+/data/3D/building
+/gpismap/gpismap_Dll/x64/Release

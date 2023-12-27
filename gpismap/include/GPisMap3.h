@@ -98,6 +98,7 @@ protected:
  
     void init();
     bool preprocData( float * dataz, int N, std::vector<float> & pose);
+    bool preprocData_scan(float* dataz, int N, std::vector<float>& pose);
     bool regressObs();
     void updateMapPoints();
     void reEvalPoints(std::vector<std::shared_ptr<Node3> >& nodes);
@@ -127,6 +128,8 @@ public:
     void update( float * dataz, int N, float pose[12]);
     // to be called by mex
     void update( float * dataz, int N, std::vector<float> & pose);
+    int update_scan(float* dataz, int N, std::vector<float>& pose);
+
     bool test( float* x, int dim, int leng, float * res);
     void resetCam(camParam c);
 
