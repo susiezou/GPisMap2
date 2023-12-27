@@ -65,16 +65,19 @@ double* read_bin_double(const char* filepath, long& file_size) {
 int main()
 {
     std::cout << "Hello World!\n";
-    const char* datapath = "C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/depth/f670.bin";
-    const char* posepath = "C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/pose/f670pose.bin";
-    long fsize, test_size, posesize=12, camsize=6;
-    float* cam = read_bin("C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/f670cam.bin", camsize);
+    const std::string filepath = "../../../data/3D/building/";
+    const std::string datapath = filepath + "depth/f670.bin";
+    const std::string posepath = filepath + "pose/f670pose.bin";
+    const std::string campath = filepath + "f670cam.bin";
+    const std::string testpath = filepath + "depth/f670test.bin";
+    long fsize, test_size, posesize = 12, camsize = 6;
+    float* pose = read_bin(posepath.c_str(), posesize);
+    float* cam = read_bin(campath.c_str(), camsize);
     fsize = cam[4] * cam[5];
-    float* pose = read_bin(posepath, posesize);
-    float* data = read_bin(datapath, fsize);
     test_size = fsize * 3;
-    float* testdata = read_bin("C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/depth/f670test.bin", test_size);
-    
+    float* data = read_bin(datapath.c_str(), fsize);
+    float* testdata = read_bin(testpath.c_str(), test_size);
+
     GPM3Handle gm = nullptr;
     create_gpm3d_instance(&gm);
     set_gpm3d_camparam(gm,
@@ -87,7 +90,7 @@ int main()
 
     int succeed = update_scan3d(gm, data, fsize, pose);
     delete[] data;
-    float result[200000] = {-1};
+    float result[200000] = { -1 };
     int flag = test_gpm3d(gm, testdata, 3, 3000, result);
     return  1;
 
