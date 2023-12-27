@@ -102,8 +102,8 @@ def main():
     for k in frameid:
         if (int(k) <930) or (int(k)>1000):
             continue
-        rx = 0.00175 * 2
-        ry = 0.0175 * 1
+        rx = 0.00175 * 3
+        ry = 0.0175 * 1.2
         print(f"#frame: {k}")
         tr = np.array(traj[k]['ego_transformation'])[:3]
         valid = data['frameID'] == int(k)
@@ -114,9 +114,15 @@ def main():
         # rotate azimuth
         a0 = np.arctan2(vec[1], vec[0])
         dataz[:, 0] -= a0
-        valid2 = np.abs(dataz[:, 0]) < 0.35 * 3.14
+        valid2 = np.abs(dataz[:, 0]) < 0.3 * 3.14
+        datav = dataz[valid2]
 
-        img, cxy, minx, miny = trans_to_img(dataz[valid2], resolx=rx,resoly=ry)
+        r_sub = np.cos(datav[:, 1]) * datav[:, 2]
+        zloc = np.cos(datav[:, 0]) * r_sub
+        u = np.tan(datav[:, 0])
+        v = np.tan(datav[:, 1])/np.cos(datav[:, 0])
+
+        img, cxy, minx, miny = trans_to_img(np.c_[u, v, zloc], resolx=rx,resoly=ry)
 
         tr = tr.flatten().astype(np.float32)
         Rot = (np.array([[0,1,0],[0,0,1],[1,0,0]]) @

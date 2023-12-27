@@ -65,11 +65,12 @@ double* read_bin_double(const char* filepath, long& file_size) {
 int main()
 {
     std::cout << "Hello World!\n";
+    const std::string frame = "977";
     const std::string filepath = "../../../data/3D/building/";
-    const std::string datapath = filepath + "depth/f670.bin";
-    const std::string posepath = filepath + "pose/f670pose.bin";
-    const std::string campath = filepath + "f670cam.bin";
-    const std::string testpath = filepath + "depth/f670test.bin";
+    const std::string datapath = filepath + "depth/f"+frame+".bin";
+    const std::string posepath = filepath + "pose/f"+frame+"pose.bin";
+    const std::string campath = filepath + "f" + frame + "cam.bin";
+    const std::string testpath = filepath + "depth/f"+frame+"test.bin";
     long fsize, test_size, posesize = 12, camsize = 6;
     float* pose = read_bin(posepath.c_str(), posesize);
     float* cam = read_bin(campath.c_str(), camsize);
