@@ -311,12 +311,12 @@ bool GPisMap3::preprocData_scan(float* dataz, int N, std::vector<float>& pose)
         for (int m_ = 0; m_ < m; m_++) {
             row = m_ * setting.obs_skip;
 
-            float azi = (float(col) - cam.cx) * cam.fx; // azi
-            float ele = (float(row) - cam.cy) * cam.fy;  // ele ; f=resolution of angles
+            //float azi = (float(col) - cam.cx) * cam.fx; // azi
+            //float ele = (float(row) - cam.cy) * cam.fy;  // ele ; f=resolution of angles
 
             int j = 2 * (m * n_ + m_);
-            vu_grid[j + 1] = std::tan(azi);
-            vu_grid[j] = std::tan(ele) / std::cos(azi); // vertical
+            vu_grid[j + 1] = (float(col) - cam.cx) * cam.fx; // std::tan(azi);
+            vu_grid[j] = (float(row) - cam.cy) * cam.fy; // std::tan(ele) / std::cos(azi); // vertical
 
             int k = row * cam.width + col;
             float range = dataz[k];
@@ -326,8 +326,10 @@ bool GPisMap3::preprocData_scan(float* dataz, int N, std::vector<float>& pose)
 
                 float u = vu_grid[j + 1]; // x:z
                 float v = vu_grid[j]; // y:z
-                float yloc = std::sin(ele) * range;
-                float zloc = yloc / v;
+                float zloc = range;
+                float yloc = v * zloc;
+                // float yloc = std::sin(ele)* range;
+                // float zloc = yloc / v;
                 float xloc = u * zloc;
 
                 obs_valid_u.push_back(u);
