@@ -123,14 +123,12 @@ def loop_single_frame(gp, data, traj, center, t_record):
             train_gp(gp, t_record)  # training GP
     return gp, k, cc
 
-def loop_batch_frame(gp, data, traj, center, t_record, bsize=20):
+def loop_batch_frame(gp, data, traj, center, xy, t_record, bsize=20):
     cc = 0;
     ids = np.array(data.normals)[:, 2]
     xyz = np.array(data.points)
     frameid = list(traj.keys())
     for k in frameid[::bsize]:
-        if int(k)<930:
-            continue
         rx = 0.00175 * 0.5
         ry = 0.0175 * 0.2
         print(f"#frame: {k}")
@@ -161,11 +159,13 @@ def loop_batch_frame(gp, data, traj, center, t_record, bsize=20):
 
         uvk = Rot.reshape(3, 3).T
         pts_local = (dataz - tr) @ uvk
+        xy_local = (xy - tr) @ uvk
         pts = pts_local[pts_local[:, 2] > 0]
 
         u = pts[:, 0] / pts[:, 2]
         v = pts[:, 1] / pts[:, 2]
-        valid2 = np.abs(u) < np.tan(0.25 * 3.14)
+        ulimit = xy_local[:,0] / xy_local[:,2]
+        valid2 = (u < np.max(ulimit) + 0.04) & (u > np.min(ulimit) - 0.04)
 
         img, cxy, minx, miny = trans_to_img(np.c_[u, v, pts[:, 2]][valid2], resolx=rx, resoly=ry)
 
@@ -184,15 +184,13 @@ def loop_batch_frame(gp, data, traj, center, t_record, bsize=20):
     return gp, k, cc
 
 def main():
-
-    filepath = '//koko/qianqian/recording_Town10HD/dense_no_occlusion/'
-    with open('//koko/qianqian/recording_Town10HD/recording_Town10HD_Opt_2023-09-05_14_38.json', 'r') as file:
+    filepath = 'D:/carla/dense_no_occlusion/'
+    with open('D:/carla/recording_Town10HD_Opt_2023-09-05_14_38.json', 'r') as file:
         traj = json.load(file)
 
     # data, _ = read_ply_file(filepath + 'scanstrips/all_frames.ply',
     #                dtype=np.dtype([("x", "<f4"), ("y", "<f4"), ("z", "<f4"), ("labels", "I"), ("frameID", "I")]))
-    data = o3d.io.read_point_cloud(
-        '//koko/qianqian/recording_Town10HD/dense_no_occlusion/train_pts/pc_no_normal_noisy.ply')
+    data = o3d.io.read_point_cloud(filepath + 'train_pts/pc_no_normal_noisy.ply')
     obj = o3d.io.read_point_cloud(filepath + 'train_pts/building_pc_noisy_sample2.ply')
     
     t_record = {}
@@ -203,6 +201,10 @@ def main():
 
     # set mapping box
     center = obj.get_center()
+    minb = obj.get_min_bound()
+    maxb = obj.get_max_bound()
+    xx, yy = np.meshgrid(np.c_[minb[0], maxb[0]], np.c_[minb[1], maxb[1]])
+    xy = np.c_[xx.flatten(), yy.flatten()]
 
     test_xyz = np.array(o3d.io.read_point_cloud(filepath + 'test_pts/resolution_0.05/test_pts_sample2_sdf.ply').points)
     gp_cloud_dir = filepath + '/output/gpismap/meta_data/frames/'
@@ -214,7 +216,7 @@ def main():
         bias = 0
 
     # loop for each frame
-    gp, k, cc = loop_batch_frame(gp, data, traj, center, t_record)
+    gp, k, cc = loop_batch_frame(gp, data, traj, center, xy, t_record)
 
     if cc != 0:
         train_gp(gp, t_record)
