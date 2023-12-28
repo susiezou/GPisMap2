@@ -363,6 +363,27 @@ bool GPisMap3::preprocData_scan(float* dataz, int N, std::vector<float>& pose)
     return false;
 }
 
+int GPisMap3::add_scan(float* dataz, int N, std::vector<float>& pose)
+{
+    if (!preprocData_scan(dataz, N, pose))
+        return 0;
+
+    // Step 1
+    if (regressObs()) {
+
+        // Step 2
+        updateMapPoints();
+
+        // Step 3
+        addNewMeas();
+
+        return 1;
+
+    }
+    return 0;
+}
+
+
 int GPisMap3::update_scan(float* dataz, int N, std::vector<float>& pose)
 {
     if (!preprocData_scan(dataz, N, pose))

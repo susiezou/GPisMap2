@@ -115,6 +115,24 @@ int update_scan3d(GPM3Handle gh, float* depth, int numel, float* pose) { // pose
     return 0;
 }
 
+int add_scan3d(GPM3Handle gh, float* depth, int numel, float* pose) { // pose[12]
+    if (gh != NULL) {
+        std::vector<float> pose_vec;
+        for (int i = 0; i < 12; i++)
+            pose_vec.push_back(pose[i]);
+        return gh->add_scan(depth, numel, pose_vec);
+    }
+    return 0;
+}
+
+int train_gp3d(GPM3Handle gh) {
+    if (gh != NULL) {
+        gh->updateGPs();
+        return 1;
+    }
+    return 0;
+}
+
 int test_gpm3d(GPM3Handle gh, float * x,  int dim,  int leng, float* res){
     if (gh != NULL){
         gh->test(x, dim, leng, res);
