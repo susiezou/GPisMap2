@@ -96,7 +96,7 @@ def loop_single_frame(gp, data, traj, center, t_record):
         # rotate azimuth
         a0 = np.arctan2(vec[1], vec[0])
         dataz[:, 0] -= a0
-        valid2 = np.abs(dataz[:, 0]) < 0.3 * 3.14
+        valid2 = np.abs(dataz[:, 0]) < 0.25 * 3.14
         datav = dataz[valid2]
 
         r_sub = np.cos(datav[:, 1]) * datav[:, 2]
@@ -124,29 +124,34 @@ def loop_single_frame(gp, data, traj, center, t_record):
     return gp, k, cc
 
 def loop_batch_frame(gp, data, traj, center, t_record, bsize=20):
-    cc = 0; bb = 0
-    xyz = np.c_[data['x'], data['y'], data['z']]
+    cc = 0;
+    ids = np.array(data.normals)[:, 2]
+    xyz = np.array(data.points)
     frameid = list(traj.keys())
     for k in frameid[::bsize]:
-        rx = 0.00175 * 3
-        ry = 0.0175 * 1.2
+        if int(k)<930:
+            continue
+        rx = 0.00175 * 0.5
+        ry = 0.0175 * 0.2
         print(f"#frame: {k}")
         t_record['frame'].append(k)
 
         ik = int(k)
         tr = np.array([0., 0., 0.])
-        valid = np.zeros(len(data['frameID']), dtype=bool)
+        valid = np.zeros(len(ids), dtype=bool)
         for i in range(bsize):
             iki = ik + i
             s = f"{iki}"
             tr += np.array(traj[s]['ego_transformation'])[:3]
-            valid = valid | (data['frameID'] == iki)
+            valid = valid | (ids == iki)
 
         tr /= bsize
         dataz = xyz[valid]
         if len(dataz) <= 0:
             continue
         vec = center - tr[:3]
+        if np.linalg.norm(vec) > 100:
+            continue
         a0 = np.arctan2(vec[1], vec[0])
 
         tr = tr.flatten().astype(np.float32)
@@ -155,7 +160,7 @@ def loop_batch_frame(gp, data, traj, center, t_record, bsize=20):
             np.float32)
 
         uvk = Rot.reshape(3, 3).T
-        pts_local = (xyz - tr) @ uvk
+        pts_local = (dataz - tr) @ uvk
         pts = pts_local[pts_local[:, 2] > 0]
 
         u = pts[:, 0] / pts[:, 2]
@@ -166,14 +171,14 @@ def loop_batch_frame(gp, data, traj, center, t_record, bsize=20):
 
         gp.set_cam_param(rx, ry, cxy[0], cxy[1], img.shape[1], img.shape[0])
         tic = time.perf_counter()
-        gp.update_scan(img.astype(np.float32), tr, Rot)
-        # gp.add_scan(img.astype(np.float32), tr, Rot)
+        # gp.update_scan(img.astype(np.float32), tr, Rot)
+        gp.add_scan(img.astype(np.float32), tr, Rot)
         toc = time.perf_counter()
         print(f"Elapsed time: {toc - tic:0.4f} seconds...")
         t_record['train'].append(toc - tic)
-        t_record['train_number'].append(len(dataz[valid2]))
+        t_record['train_number'].append(len(pts[valid2]))
         cc += 1
-        if cc == 50:
+        if cc == 10:
             cc = 0
             train_gp(gp, t_record)  # training GP
     return gp, k, cc
@@ -184,8 +189,10 @@ def main():
     with open('//koko/qianqian/recording_Town10HD/recording_Town10HD_Opt_2023-09-05_14_38.json', 'r') as file:
         traj = json.load(file)
 
-    data, _ = read_ply_file(filepath + 'scanstrips/all_frames.ply',
-                   dtype=np.dtype([("x", "<f4"), ("y", "<f4"), ("z", "<f4"), ("labels", "I"), ("frameID", "I")]))
+    # data, _ = read_ply_file(filepath + 'scanstrips/all_frames.ply',
+    #                dtype=np.dtype([("x", "<f4"), ("y", "<f4"), ("z", "<f4"), ("labels", "I"), ("frameID", "I")]))
+    data = o3d.io.read_point_cloud(
+        '//koko/qianqian/recording_Town10HD/dense_no_occlusion/train_pts/pc_no_normal_noisy.ply')
     obj = o3d.io.read_point_cloud(filepath + 'train_pts/building_pc_noisy_sample2.ply')
     
     t_record = {}
@@ -207,7 +214,7 @@ def main():
         bias = 0
 
     # loop for each frame
-    gp, k, cc = loop_single_frame(gp, data, traj, center, t_record)
+    gp, k, cc = loop_batch_frame(gp, data, traj, center, t_record)
 
     if cc != 0:
         train_gp(gp, t_record)
