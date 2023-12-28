@@ -99,12 +99,14 @@ def main():
         tname = 'LogGPIS'
         bias = 0
 
+    cc = 0
     for k in frameid:
         if (int(k) <930) or (int(k)>1000):
             continue
         rx = 0.00175 * 3
         ry = 0.0175 * 1.2
         print(f"#frame: {k}")
+        t_record['frame'].append(k)
         tr = np.array(traj[k]['ego_transformation'])[:3]
         valid = data['frameID'] == int(k)
         dataz = aer[valid]
@@ -129,11 +131,31 @@ def main():
                np.array([[np.cos(-a0), -np.sin(-a0),0],[np.sin(-a0), np.cos(-a0),0], [0, 0, 1]])).flatten().astype(np.float32)
         gp.set_cam_param(rx, ry, cxy[0], cxy[1], img.shape[1], img.shape[0])
         tic = time.perf_counter()
-        gp.update_scan(img.astype(np.float32), tr, Rot)
+        # gp.update_scan(img.astype(np.float32), tr, Rot)
+        gp.add_scan(img.astype(np.float32), tr, Rot)
         toc = time.perf_counter()
         print(f"Elapsed time: {toc - tic:0.4f} seconds...")
         t_record['train'].append(toc - tic)
         t_record['train_number'].append(len(dataz[valid2]))
+        cc += 1
+        if cc == 50:
+            cc = 0
+            # training GP:
+            tic = time.perf_counter()
+            gp.trainGPs()
+            toc = time.perf_counter()
+            print(f"Train time: {toc - tic:0.4f} seconds...")
+            t_record['frame'].append('-10')
+            t_record['train'].append(toc - tic)
+
+    if cc != 0:
+        # training GP:
+        tic = time.perf_counter()
+        gp.trainGPs()
+        toc = time.perf_counter()
+        print(f"Train time: {toc - tic:0.4f} seconds...")
+        t_record['frame'].append('-10')
+        t_record['train'].append(toc - tic)
 
     # testing:
     tic = time.perf_counter()
@@ -148,7 +170,6 @@ def main():
     pcd.normals = o3d.utility.Vector3dVector(world_n)
     # save .pcd
     o3d.io.write_point_cloud(gp_cloud_dir + "pc_"+ k +"_"+tname+".pcd", pcd)
-    t_record['frame'].append(k)
     t_record['test'].append(toc - tic)
     t_record['test_number'].append(len(test_xyz))
 

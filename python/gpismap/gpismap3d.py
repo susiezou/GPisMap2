@@ -139,6 +139,41 @@ class GPisMap3D():
             )
         assert res == 1
 
+    def add_scan(self, depth:np.ndarray, position:np.ndarray , rotation:np.ndarray):
+        """
+        add scan data, but do not update GPs (save time)
+
+        Parameters
+        ----------
+            depth : np.ndarray
+                depth values w.r.t the body frame
+
+            position : np.ndarray (3 elements)
+                position of the body in the map frame
+
+            rotation : np.ndarray (flattened, 9 elements)
+                orientation of the body in the map frame
+                flattened rotation matrix
+        """
+        assert depth.dtype == np.float32
+        assert position.dtype == np.float32 and rotation.dtype == np.float32
+        assert position.size == 3 and rotation.size == 9
+        pose = np.concatenate((position, rotation), axis=None)
+        res = _LIB.add_scan3d(self.gpmap,
+                            as_float_c_array(depth.flatten()),
+                            depth.size,
+                            as_float_c_array(pose))
+
+        assert res == 1
+
+    def trainGPs(self):
+        """"
+        train GPs with active dataset
+        """
+        res = _LIB.train_gp3d(self.gpmap)
+
+        assert res == 1
+
     def test(self, test_x:np.ndarray):
         """
         Make inference using the map
