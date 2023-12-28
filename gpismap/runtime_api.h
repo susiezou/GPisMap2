@@ -34,6 +34,8 @@ IMPORT_DLL int set_gpm3d_camparam(GPM3Handle gh,
                        int h);
 IMPORT_DLL int update_gpm3d(GPM3Handle gh, float * depth, int numel, float* pose); // pose[12]
 IMPORT_DLL int update_scan3d(GPM3Handle gh, float* depth, int numel, float* pose); // pose[12]
+IMPORT_DLL int add_scan3d(GPM3Handle gh, float* depth, int numel, float* pose); // pose[12]
+IMPORT_DLL int train_gp3d(GPM3Handle gh);
 IMPORT_DLL int test_gpm3d(GPM3Handle gh, float * x,  int dim,  int leng, float* res);
 IMPORT_DLL int get_sample_count_gpm3d(GPM3Handle gh);
 IMPORT_DLL int get_samples_gpm3d(GPM3Handle gh, float * x,  int dim,  int leng, bool grad, bool var);

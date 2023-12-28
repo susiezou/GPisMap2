@@ -104,7 +104,6 @@ protected:
     void reEvalPoints(std::vector<std::shared_ptr<Node3> >& nodes);
     void evalPoints();
     void addNewMeas();
-    void updateGPs();
 
     std::unique_ptr<ObsGP> gpo;
     std::vector<float> obs_valid_u;
@@ -130,6 +129,8 @@ public:
     // to be called by mex
     void update( float * dataz, int N, std::vector<float> & pose);
     int update_scan(float* dataz, int N, std::vector<float>& pose);
+    int add_scan(float* dataz, int N, std::vector<float>& pose);
+    void updateGPs();
     bool test( float* x, int dim, int leng, float * res);
     void resetCam(camParam c);
 
