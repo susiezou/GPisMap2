@@ -204,7 +204,7 @@ def main():
     minb = obj.get_min_bound()
     maxb = obj.get_max_bound()
     xx, yy = np.meshgrid(np.c_[minb[0], maxb[0]], np.c_[minb[1], maxb[1]])
-    xy = np.c_[xx.flatten(), yy.flatten()]
+    xy = np.c_[xx.flatten(), yy.flatten(), np.zeros(4) + 2]
 
     test_xyz = np.array(o3d.io.read_point_cloud(filepath + 'test_pts/resolution_0.05/test_pts_sample2_sdf.ply').points)
     gp_cloud_dir = filepath + '/output/gpismap/meta_data/frames/'

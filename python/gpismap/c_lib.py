@@ -9,7 +9,7 @@ import ctypes
 import platform
 import multiprocessing
 
-loggpis = False
+loggpis = True
 if loggpis:
     mapdll = 'loggpis_Dll.dll'
 else:
