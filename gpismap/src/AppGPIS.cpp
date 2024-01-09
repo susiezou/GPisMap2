@@ -127,7 +127,7 @@ void AppGPIS::train(const float* samples, float* p_sig, int N) {
             grad(1, k) = samples[k8 + 5];
             grad(2, k) = samples[k8 + 6];
 
-            f(k) = -samples[k8 + 3];
+            f(k) = samples[k8 + 3];
             prior_sig(k) = p_sig[k];
             sigx(k) = param.noise;
             siggrad(k) = samples[k8 + 7];
