@@ -215,39 +215,47 @@ void AppGPIS::test(const float* samples, float* p_sig, int M, float* val, float*
     K_p.block(0, 0, nSamples, M) = prior_sig * t_sig.transpose();
     EMatrixX K_dyn = K.block(0,0,K.rows(),M).cwiseProduct(K_p);
 
-    std::ofstream logFile("C:\\Users\\zou\\source\\repos\\susiezou\\GPisMap2\\build\\test_logfile.txt", std::ios::app);
-    if (!logFile.is_open()) {
-        std::cerr << "Error opening the log file." << std::endl;
-        return;
-    }
-
-    logFile << "This is a log message for testing." << std::endl;
-    logFile << "K_row/col:" << K.rows() << "; " << K.cols() << "; K_dyn: " << K_dyn.rows() << "; " << K_dyn.cols() << std::endl;
-    logFile << "K_p Matrix:" << std::endl;
-    logFile << K_p.block(0, 0, 4, 4) << std::endl;
-    logFile << "K Matrix:" << std::endl;
-    logFile << K.block(0, 0, 4, 4) << std::endl;
-    logFile << "K_dyn Matrix:" << std::endl;
-    logFile << K_dyn.block(0, 0, 4, 4) << std::endl;
     // regression
     EVectorX aa = K_dyn.transpose() * alpha;
     std::memcpy(val, aa.data(), aa.size() * sizeof(float));
-    logFile << "val:" << std::endl;
-    for (int i = 0; i < aa.size(); ++i) {
-        logFile << "Element " << i << ": " << val[i] << std::endl;
+
+    std::ofstream logFile("C:\\Users\\zou\\source\\repos\\susiezou\\GPisMap2\\build\\test_logfile.txt", std::ios::app);
+    if (!logFile.is_open()) {
+        std::cerr << "Error opening the log file." << std::endl;
+        L.template triangularView<Eigen::Lower>().solveInPlace(K_dyn);
+
+        K_dyn = K_dyn.array().pow(2);
+        EVectorX v = K_dyn.colwise().sum();
+
+        EVectorX vv = t_sig.array().pow(2) + param.noise * param.noise - v.array();
+        std::memcpy(var, vv.data(), vv.size() * sizeof(float));
+    }
+    else {
+        logFile << "This is a log message for testing." << std::endl;
+        logFile << "K_row/col:" << K.rows() << "; " << K.cols() << "; K_dyn: " << K_dyn.rows() << "; " << K_dyn.cols() << std::endl;
+        logFile << "K_p Matrix:" << std::endl;
+        logFile << K_p.block(0, 0, 4, 4) << std::endl;
+        logFile << "K Matrix:" << std::endl;
+        logFile << K.block(0, 0, 4, 4) << std::endl;
+        logFile << "K_dyn Matrix:" << std::endl;
+        logFile << K_dyn.block(0, 0, 4, 4) << std::endl;
+        logFile << "val:" << std::endl;
+        for (int i = 0; i < aa.size(); ++i) {
+            logFile << "Element " << i << ": " << val[i] << std::endl;
+        }
+        L.template triangularView<Eigen::Lower>().solveInPlace(K_dyn);
+
+        K_dyn = K_dyn.array().pow(2);
+        EVectorX v = K_dyn.colwise().sum();
+        EVectorX vv = t_sig.array().pow(2) + param.noise * param.noise - v.array();
+        std::memcpy(var, vv.data(), vv.size() * sizeof(float));
+
+        logFile << "Result vv Matrix:" << std::endl;
+        logFile << vv << std::endl;
+        // log
+        logFile.close();
     }
 
-    L.template triangularView<Eigen::Lower>().solveInPlace(K_dyn);
-    
-    K_dyn = K_dyn.array().pow(2);
-    EVectorX v = K_dyn.colwise().sum();
-
-    EVectorX vv = t_sig.array().pow(2) + param.noise * param.noise - v.array();
-    std::memcpy(var, vv.data(), vv.size() * sizeof(float));
-    logFile << "Result vv Matrix:" << std::endl;
-    logFile << vv << std::endl;
-    // log
-    logFile.close();
     return;
 }
 
