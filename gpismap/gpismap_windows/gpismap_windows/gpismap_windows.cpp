@@ -104,16 +104,19 @@ int main_0()
 int main()
 {
     std::cout << "Hello World!\n";
-    const std::string filepath = "D:/carla/dense_no_occlusion/";
-    const std::string datapath = filepath + "train_pts/snip.ply";
-    const std::string testpath = filepath + "test_pts/resolution_0.05/test_pts_snip.ply";
+    const std::string filepath = "//koko/qianqian/recording_Town10HD/dense_no_occlusion/";
+    const std::string datapath = filepath + "train_pts/sample2_nan.ply";
+    const std::string testpath = filepath + "test_pts/resolution_0.05/nan.ply";
+    const std::string priorpath = filepath + "train_pts/sample2_nan2.ply";
 
     pcl::PointCloud<pcl::PointNormal> dataCloud;
     pcl::PointCloud<pcl::PointNormal> testCloud;
+    pcl::PointCloud<pcl::PointNormal> dataCloud2;
     if (pcl::io::loadPLYFile<pcl::PointNormal>(datapath.c_str(), dataCloud) == -1) {
         PCL_ERROR("Couldn't read the file\n");
         return -1;
     }
+    pcl::io::loadPLYFile<pcl::PointNormal>(priorpath.c_str(), dataCloud2);
     if (pcl::io::loadPLYFile<pcl::PointNormal>(testpath.c_str(), testCloud) == -1) {
         PCL_ERROR("Couldn't read the file\n");
         return -1;
@@ -130,7 +133,7 @@ int main()
         data[i8] = point.x;
         data[i8 + 1] = point.y;
         data[i8 + 2] = point.z;
-        data[i8 + 3] = 1;
+        data[i8 + 3] = dataCloud2.points[i].normal_x;
         data[i8 + 4] = point.normal_x;
         data[i8 + 5] = point.normal_y;
         data[i8 + 6] = point.normal_z;
@@ -163,7 +166,7 @@ int main()
         testCloud.points[i].normal_x = result[i8];
         testCloud.points[i].normal_y = result[i8+4];
     }
-    pcl::io::savePLYFileBinary(filepath + "output/3d_gmmgp/meta_data/sample2.ply", testCloud);
+    pcl::io::savePLYFileBinary(filepath + "output/3d_gmmgp/meta_data/nan.ply", testCloud);
     delete[] result;    
     return  1;
 
