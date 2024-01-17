@@ -43,7 +43,9 @@ IMPORT_DLL int get_samples_gpm3d(GPM3Handle gh, float * x,  int dim,  int leng, 
 //APP GP
 IMPORT_DLL int create_gp_func(GPFUNHandle* gh);
 IMPORT_DLL int update_gp(GPFUNHandle gh, float* data, float* p_sig, int N);
+IMPORT_DLL int update_gp2(GPFUNHandle gh, float* data, float* p_sig, int N);
 IMPORT_DLL int test_gp(GPFUNHandle gh, float* x, float* p_sig, int M, float* val, float* var);
+IMPORT_DLL int test_gp2(GPFUNHandle gh, float* x, int M, float* val);
 IMPORT_DLL int reset_gp(GPFUNHandle gh);
 IMPORT_DLL int delete_gp_instance(GPFUNHandle gh);
 

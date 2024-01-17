@@ -1,6 +1,9 @@
 #include "AppGPIS.h"
 #include "covFnc.h"
 #include <Eigen/Cholesky>
+#include <chrono>
+#include <thread>
+#include <array>
 #include <iostream>
 #include <fstream>
 
@@ -188,6 +191,200 @@ void AppGPIS::train(const float* samples, float* p_sig, int N) {
     return;
 }
 
+void AppGPIS::addNewMeas(const float* samples, float* p_sig, int N) {
+    // create if not initialized
+    if (t == nullptr) {
+        t = new OcTree(Point3<float>(0.0, 0.0, 0.0));
+    }
+    nSamples = N;
+    if (nSamples < 1)
+        return;
+    int num_elements = nSamples;
+    int num_threads = std::thread::hardware_concurrency();
+    std::vector<std::thread> threads;
+    int num_threads_to_use = num_threads;
+
+    if (num_elements < num_threads) {
+        num_threads_to_use = num_elements;
+    }
+    else {
+        num_threads_to_use = num_threads;
+    }
+    int num_leftovers = num_elements % num_threads_to_use;
+    int batch_size = num_elements / num_threads_to_use;
+    int element_cursor = 0;
+    for (int i = 0; i < num_leftovers; ++i) {
+        std::thread thread_i = std::thread(&AppGPIS::addNewMeas_kernel,
+            std::ref(*this),
+            samples,
+            i,
+            element_cursor,
+            element_cursor + batch_size + 1);
+        threads.push_back(std::move(thread_i));
+        element_cursor += batch_size + 1;
+    }
+    for (int i = num_leftovers; i < num_threads_to_use; ++i) {
+        std::thread thread_i = std::thread(&AppGPIS::addNewMeas_kernel,
+            std::ref(*this),
+            samples,
+            i,
+            element_cursor,
+            element_cursor + batch_size);
+        threads.push_back(std::move(thread_i));
+        element_cursor += batch_size;
+    }
+
+    for (auto& th : threads) {
+        if (th.joinable())
+            th.join();
+    }
+
+    return;
+}
+
+void AppGPIS::addNewMeas_kernel(const float* samples, int thread_idx, int start_idx, int end_idx) 
+{
+    if (t == nullptr || nSamples < 1)
+        return;
+
+    for (int k = start_idx; k < end_idx; k++) {
+        int k8 = k * 8;
+        Point3<float> grad;
+        grad.x = samples[k8 + 4];
+        grad.y = samples[k8 + 5];
+        grad.z = samples[k8 + 6];
+
+        Point3<float> pt(samples[k8], samples[k8 + 1], samples[k8 + 2]);
+        std::shared_ptr<Node3> p(new Node3(pt));
+        std::unordered_set<OcTree*> vecInserted;
+
+        bool succeeded = false;
+        {
+            std::lock_guard<std::mutex> lock(mux);
+            if (!t->IsNotNew(p)) {
+                succeeded = t->Insert(p, vecInserted);
+                if (succeeded) {
+                    if (t->IsRoot() == false) {
+                        t = t->getRoot();
+                    }
+                }
+            }
+        }
+
+        if ((succeeded == false) || !(vecInserted.size() > 0)) // if failed, then continue to test the next point
+            continue;
+
+
+        /////////////////////////////////////////////////////////////////
+        // update the point
+        p->updateData(samples[k8 + 3], param.noise, grad, samples[k8 + 7], NODE_TYPE::HIT);
+
+        // supposed to have one element
+        auto itv = vecInserted.cbegin();
+        {
+            std::lock_guard<std::mutex> lock(mux);
+            activeSet.insert(*itv);
+        }
+        vecInserted.clear();
+    }
+    return;
+}
+
+void AppGPIS::updateGPs() {
+
+    std::unordered_set<OcTree*> updateSet;
+
+    int num_threads = std::thread::hardware_concurrency();
+    std::vector<std::thread> threads;
+
+    int num_threads_to_use = num_threads;
+
+    for (auto it = activeSet.cbegin(); it != activeSet.cend(); it++) {
+
+        Point3<float> ct = (*it)->getCenter();
+        float l = (*it)->getHalfLength();
+        AABB3 searchbb(ct.x, ct.y, ct.z, 2 * l);
+        std::vector<OcTree*> qs;
+        t->QueryNonEmptyLevelC(searchbb, qs);
+        if (qs.size() > 0) {
+            for (auto itq = qs.cbegin(); itq != qs.cend(); itq++) {
+                updateSet.insert(*itq);
+            }
+        }
+    }
+
+    int num_elements = updateSet.size();
+    if (num_elements < 1)
+        return;
+
+    std::vector<OcTree*> nodes_to_update;
+    for (auto const& node : updateSet) {
+        nodes_to_update.push_back(node);
+    }
+
+    if (num_elements < num_threads) {
+        num_threads_to_use = num_elements;
+    }
+    else {
+        num_threads_to_use = num_threads;
+    }
+    int num_leftovers = num_elements % num_threads_to_use;
+    int batch_size = num_elements / num_threads_to_use;
+    int element_cursor = 0;
+    for (int i = 0; i < num_leftovers; ++i) {
+        std::thread thread_i = std::thread(&AppGPIS::updateGPs_kernel,
+            std::ref(*this),
+            i,
+            element_cursor,
+            element_cursor + batch_size + 1,
+            std::ref(nodes_to_update));
+        threads.push_back(std::move(thread_i));
+        element_cursor += batch_size + 1;
+
+    }
+    for (int i = num_leftovers; i < num_threads_to_use; ++i) {
+        std::thread thread_i = std::thread(&AppGPIS::updateGPs_kernel,
+            std::ref(*this),
+            i,
+            element_cursor,
+            element_cursor + batch_size,
+            std::ref(nodes_to_update));
+        threads.push_back(std::move(thread_i));
+        element_cursor += batch_size;
+    }
+
+    for (auto& th : threads) {
+        if (th.joinable())
+            th.join();
+    }
+
+    // clear active set once all the jobs for update are done.
+    activeSet.clear();
+
+    return;
+}
+
+void AppGPIS::updateGPs_kernel(int thread_idx,
+    int start_idx,
+    int end_idx,
+    std::vector<OcTree*>& nodes_to_update) {
+    std::vector<std::shared_ptr<Node3> > res;
+    for (auto it = nodes_to_update.begin() + start_idx; it != nodes_to_update.begin() + end_idx; it++) {
+        if ((*it) != nullptr) {
+            Point3<float> ct = (*it)->getCenter();
+            float l = (*it)->getHalfLength();
+            AABB3 searchbb(ct.x, ct.y, ct.z, l * 2);
+            res.clear();
+            t->QueryRange(searchbb, res);
+            if (res.size() > 0) {
+                (*it)->InitGP(param.scale, param.noise);
+                (*it)->UpdateGP(res);
+            }
+        }
+    }
+
+}
+
 
 void AppGPIS::test(const float* samples, float* p_sig, int M, float* val, float* var) {
 
@@ -217,10 +414,21 @@ void AppGPIS::test(const float* samples, float* p_sig, int M, float* val, float*
 
     std::ofstream logFile("C:\\Users\\zou\\source\\repos\\susiezou\\GPisMap2\\build\\test_logfile.txt", std::ios::app);
     if (!logFile.is_open()) {
-        std::cerr << "Error opening the log file." << std::endl;
+       
+        // regression
+        EVectorX aa = K_dyn.transpose() * alpha;
+        std::memcpy(val, aa.data(), aa.size() * sizeof(float));
+
+        L.template triangularView<Eigen::Lower>().solveInPlace(K_dyn);
+
+        K_dyn = K_dyn.array().pow(2);
+        EVectorX v = K_dyn.colwise().sum();
+
+        EVectorX vv = t_sig.array().pow(2) + param.noise * param.noise - v.array();
+        std::memcpy(var, vv.data(), vv.size() * sizeof(float));
         return;
     }
-
+    std::cerr << "Opening the log file." << std::endl;
     logFile << "This is a log message for testing." << std::endl;
     logFile << "K_row/col:" << K.rows() << "; " << K.cols() << "; K_dyn: " << K_dyn.rows() << "; " << K_dyn.cols() << std::endl;
     logFile << "K_p Matrix:" << std::endl;
@@ -249,6 +457,164 @@ void AppGPIS::test(const float* samples, float* p_sig, int M, float* val, float*
     // log
     logFile.close();
     return;
+}
+
+bool AppGPIS::test(float* x, int leng, float* res) {
+    if (x == nullptr || leng < 1)
+        return false;
+
+    int num_threads = std::thread::hardware_concurrency();
+    int num_threads_to_use = num_threads;
+    if (leng < num_threads) {
+        num_threads_to_use = leng;
+    }
+    else {
+        num_threads_to_use = num_threads;
+    }
+    std::vector<std::thread> threads;
+
+    int num_leftovers = leng % num_threads_to_use;
+    int batch_size = leng / num_threads_to_use;
+    int element_cursor = 0;
+
+    for (int i = 0; i < num_leftovers; ++i) {
+        std::thread thread_i = std::thread(&AppGPIS::test_kernel,
+            std::ref(*this),
+            i,
+            element_cursor,
+            element_cursor + batch_size + 1,
+            x, res);
+        threads.push_back(std::move(thread_i));
+        element_cursor += batch_size + 1;
+
+    }
+    for (int i = num_leftovers; i < num_threads_to_use; ++i) {
+        std::thread thread_i = std::thread(&AppGPIS::test_kernel,
+            std::ref(*this),
+            i,
+            element_cursor,
+            element_cursor + batch_size,
+            x, res);
+        threads.push_back(std::move(thread_i));
+        element_cursor += batch_size;
+    }
+
+    for (auto& th : threads) {
+        if (th.joinable())
+            th.join();
+    }
+
+    return true;
+}
+
+void AppGPIS::test_kernel(int thread_idx,
+    int start_idx,
+    int end_idx,
+    float* x,
+    float* res) {
+
+    float var_thre = 0.5; // TO-DO
+
+    for (int i = start_idx; i < end_idx; ++i) {
+
+        int k3 = 3 * i;
+        EVectorX xt(3);
+        xt << x[k3], x[k3 + 1], x[k3 + 2];
+
+        int k8 = 8 * i;
+
+        // query Cs
+        AABB3 searchbb(xt(0), xt(1), xt(2), (float)GPISMAP3_TREE_CLUSTER_HALF_LENGTH * 30.0);
+        std::vector<OcTree*> octs;
+        std::vector<float> sqdst;
+        t->QueryNonEmptyLevelC(searchbb, octs, sqdst);
+
+        res[k8 + 4] = 1.0 + param.noise; // variance of sdf value
+
+        if (octs.size() == 1) {
+            std::shared_ptr<OnGPIS> gp = octs[0]->getGP();
+            if (gp != nullptr) {
+                gp->testSinglePoint(xt, res[k8], &res[k8 + 1], &res[k8 + 4]);
+            }
+        }
+        else if (sqdst.size() > 1) {
+            // sort by distance
+            std::vector<int> idx(sqdst.size());
+            std::size_t n(0);
+            std::generate(std::begin(idx), std::end(idx), [&] { return n++; });
+            std::sort(std::begin(idx), std::end(idx), [&](int i1, int i2) { return sqdst[i1] < sqdst[i2]; });
+
+            // get THE FIRST gp pointer
+            std::shared_ptr<OnGPIS> gp = octs[idx[0]]->getGP();
+            if (gp != nullptr) {
+                gp->testSinglePoint(xt, res[k8], &res[k8 + 1], &res[k8 + 4]);
+            }
+
+            if (res[k8 + 4] > var_thre) {
+
+                float f2[8];
+                float grad2[8 * 3];
+                float var2[8 * 4];
+
+                var2[0] = res[k8 + 4];
+                int numc = sqdst.size();
+                if (numc > 3) numc = 3;
+                bool need_wsum = true;
+
+                for (int m = 0; m < (numc - 1); m++) {
+                    int m_1 = m + 1;
+                    int m3 = m_1 * 3;
+                    int m4 = m_1 * 4;
+                    gp = octs[idx[m_1]]->getGP();
+                    gp->testSinglePoint(xt, f2[m_1], &grad2[m3], &var2[m4]);
+                }
+
+                if (need_wsum) {
+                    f2[0] = res[k8];
+                    grad2[0] = res[k8 + 1];
+                    grad2[1] = res[k8 + 2];
+                    grad2[2] = res[k8 + 3];
+                    var2[1] = res[k8 + 5];
+                    var2[2] = res[k8 + 6];
+                    var2[3] = res[k8 + 7];
+                    std::vector<int> idx(numc);
+                    std::size_t n(0);
+                    std::generate(std::begin(idx), std::end(idx), [&] { return n++; });
+                    std::sort(std::begin(idx), std::end(idx), [&](int i1, int i2) { return var2[i1 * 4] < var2[i2 * 4]; });
+
+                    if (var2[idx[0] * 4] < var_thre)
+                    {
+                        res[k8] = f2[idx[0]];
+                        res[k8 + 1] = grad2[idx[0] * 3];
+                        res[k8 + 2] = grad2[idx[0] * 3 + 1];
+                        res[k8 + 3] = grad2[idx[0] * 3 + 2];
+
+                        res[k8 + 4] = var2[idx[0] * 4];
+                        res[k8 + 5] = var2[idx[0] * 4 + 1];
+                        res[k8 + 6] = var2[idx[0] * 4 + 2];
+                        res[k8 + 7] = var2[idx[0] * 4 + 3];
+                    }
+                    else {
+                        float w1 = (var2[idx[0] * 4] - var_thre);
+                        float w2 = (var2[idx[1] * 4] - var_thre);
+                        float w12 = w1 + w2;
+
+                        res[k8] = (w2 * f2[idx[0]] + w1 * f2[idx[1]]) / w12;
+                        res[k8 + 1] = (w2 * grad2[idx[0] * 3] + w1 * grad2[idx[1] * 3]) / w12;
+                        res[k8 + 2] = (w2 * grad2[idx[0] * 3 + 1] + w1 * grad2[idx[1] * 3 + 1]) / w12;
+                        res[k8 + 3] = (w2 * grad2[idx[0] * 3 + 2] + w1 * grad2[idx[1] * 3 + 2]) / w12;
+
+                        res[k8 + 4] = (w2 * var2[idx[0] * 4] + w1 * var2[idx[1] * 4]) / w12;
+                        res[k8 + 5] = (w2 * var2[idx[0] * 4 + 1] + w1 * var2[idx[1] * 4 + 1]) / w12;
+                        res[k8 + 6] = (w2 * var2[idx[0] * 4 + 2] + w1 * var2[idx[1] * 4 + 2]) / w12;
+                        res[k8 + 7] = (w2 * var2[idx[0] * 4 + 3] + w1 * var2[idx[1] * 4 + 3]) / w12;
+                    }
+                }
+            }
+        }
+
+    }
+
 }
 
 void AppGPIS::testSinglePoint(const EVectorX& xt, float& val, float grad[], float var[])

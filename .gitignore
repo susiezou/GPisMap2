@@ -16,3 +16,6 @@ jnb/*
 /gpismap/gpismap_windows/x64/Debug
 /data/3D/building
 /out/build/x64-Debug
+/gpismap/gpismap_Dll/gpismap_Dll/gpismap_Dll.vcxproj
+/gpismap/gpismap_Dll/gpismap_Dll/gpismap_Dll.vcxproj
+/gpismap/gpismap_Dll/gpismap_Dll/gpismap_Dll.vcxproj.filters
