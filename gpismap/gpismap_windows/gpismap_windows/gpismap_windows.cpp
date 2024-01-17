@@ -101,16 +101,16 @@ int main()
 {
     std::cout << "Hello World!\n";
     const std::string filepath = "//koko/qianqian/recording_Town10HD/dense_no_occlusion/";
-    const std::string datapath = filepath + "train_pts/building_pc_noisy_sample2.ply";
-    const std::string testpath = filepath + "test_pts/resolution_0.05/test_pts_sample2_part_sdf.ply";
+    const std::string datapath = filepath + "train_pts/snip.ply";
+    const std::string testpath = filepath + "test_pts/resolution_0.05/test_pts_snip.ply";
 
     pcl::PointCloud<pcl::PointNormal> dataCloud;
-    pcl::PointCloud<pcl::PointXYZ> testCloud;
+    pcl::PointCloud<pcl::PointNormal> testCloud;
     if (pcl::io::loadPLYFile<pcl::PointNormal>(datapath.c_str(), dataCloud) == -1) {
         PCL_ERROR("Couldn't read the file\n");
         return -1;
     }
-    if (pcl::io::loadPLYFile<pcl::PointXYZ>(testpath.c_str(), testCloud) == -1) {
+    if (pcl::io::loadPLYFile<pcl::PointNormal>(testpath.c_str(), testCloud) == -1) {
         PCL_ERROR("Couldn't read the file\n");
         return -1;
     }
@@ -137,7 +137,7 @@ int main()
     {
         int i3 = i * 3;
         // point
-        const pcl::PointXYZ& point = testCloud.points[i];
+        const pcl::PointNormal& point = testCloud.points[i];
         testdata[i3] = point.x;
         testdata[i3 + 1] = point.y;
         testdata[i3 + 2] = point.z;
@@ -147,8 +147,16 @@ int main()
     create_gp_func(&gm);
 
     int succeed = update_gp(gm, data, psig, fsize);
-    float result[200000] = { -1 };
-    int flag = test_gp(gm, testdata, 200000, result);
+    float result[160000] = { -1 };
+    int flag = test_gp(gm, testdata, 20000, result);
+    for (size_t i = 0; i < 20000; i++)
+    {
+        int i8 = i * 8;
+        // point
+        testCloud.points[i].normal_x = result[i8];
+        testCloud.points[i].normal_y = result[i8+4];
+    }
+    pcl::io::savePLYFileBinary(filepath + "output/3d_gmmgp/meta_data/sample2.ply", testCloud);
     return  1;
 
 }
