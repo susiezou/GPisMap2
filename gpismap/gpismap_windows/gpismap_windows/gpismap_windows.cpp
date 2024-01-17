@@ -100,7 +100,7 @@ int main_0()
 int main()
 {
     std::cout << "Hello World!\n";
-    const std::string filepath = "//koko/qianqian/recording_Town10HD/dense_no_occlusion/";
+    const std::string filepath = "D:/carla/dense_no_occlusion/";
     const std::string datapath = filepath + "train_pts/snip.ply";
     const std::string testpath = filepath + "test_pts/resolution_0.05/test_pts_snip.ply";
 
@@ -115,9 +115,9 @@ int main()
         return -1;
     }
     long fsize = dataCloud.points.size(), test_size=testCloud.points.size();
-    float* testdata = new float[test_size*3];
-    float* data = new float[fsize*8];
-    float* psig = new float[fsize];
+    float* testdata = new float[test_size*3]();
+    float* data = new float[fsize*8]();
+    float* psig = new float[fsize]();
     for (size_t i = 0; i < fsize; i++)
     {
         int i8 = i * 8;
@@ -147,9 +147,12 @@ int main()
     create_gp_func(&gm);
 
     int succeed = update_gp(gm, data, psig, fsize);
-    float result[160000] = { -1 };
-    int flag = test_gp(gm, testdata, 20000, result);
-    for (size_t i = 0; i < 20000; i++)
+    delete[] data;
+    delete[] psig;
+    float* result = new float[test_size*8]();
+    int flag = test_gp(gm, testdata, test_size, result);
+    delete[] testdata;  
+    for (size_t i = 0; i < test_size; i++)
     {
         int i8 = i * 8;
         // point
@@ -157,6 +160,7 @@ int main()
         testCloud.points[i].normal_y = result[i8+4];
     }
     pcl::io::savePLYFileBinary(filepath + "output/3d_gmmgp/meta_data/sample2.ply", testCloud);
+    delete[] result;    
     return  1;
 
 }
