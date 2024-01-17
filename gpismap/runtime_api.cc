@@ -178,6 +178,23 @@ int test_gp(GPFUNHandle gh, float* x, float* p_sig, int M, float* val, float* va
     return 0;
 }
 
+int update_gp2(GPFUNHandle gh, float* data, float* p_sig, int N) {
+    if (gh != NULL) {
+        gh->addNewMeas(data, p_sig, N);
+        gh->updateGPs();
+        return 1;
+    }
+    return 0;
+}
+
+int test_gp2(GPFUNHandle gh, float* x, int M, float* val) {
+    if (gh != NULL) {
+        gh->test(x, M, val);
+        return 1;
+    }
+    return 0;
+}
+
 int reset_gp(GPFUNHandle gh) {
     if (gh != NULL) {
         gh->reset();

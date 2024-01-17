@@ -3,6 +3,10 @@
 
 #include <iostream>
 #include "run_vs.h"
+#include <pcl/io/ply_io.h>	
+#include <pcl/point_types.h>
+
+using namespace std;
 
 float* read_bin(const char* filepath, long& file_size ) {
     FILE* file;
@@ -62,7 +66,7 @@ double* read_bin_double(const char* filepath, long& file_size) {
     return NULL;
 }
 
-int main()
+int main_0()
 {
     std::cout << "Hello World!\n";
     const char* datapath = "C:/Users/zou/source/repos/susiezou/GPisMap2/data/3D/building/depth/391.bin";
@@ -89,6 +93,62 @@ int main()
     delete[] data;
     float result[200000] = {-1};
     int flag = test_gpm3d(gm, testdata, 3, 3000, result);
+    return  1;
+
+}
+
+int main()
+{
+    std::cout << "Hello World!\n";
+    const std::string filepath = "//koko/qianqian/recording_Town10HD/dense_no_occlusion/";
+    const std::string datapath = filepath + "train_pts/building_pc_noisy_sample2.ply";
+    const std::string testpath = filepath + "test_pts/resolution_0.05/test_pts_sample2_part_sdf.ply";
+
+    pcl::PointCloud<pcl::PointNormal> dataCloud;
+    pcl::PointCloud<pcl::PointXYZ> testCloud;
+    if (pcl::io::loadPLYFile<pcl::PointNormal>(datapath.c_str(), dataCloud) == -1) {
+        PCL_ERROR("Couldn't read the file\n");
+        return -1;
+    }
+    if (pcl::io::loadPLYFile<pcl::PointXYZ>(testpath.c_str(), testCloud) == -1) {
+        PCL_ERROR("Couldn't read the file\n");
+        return -1;
+    }
+    long fsize = dataCloud.points.size(), test_size=testCloud.points.size();
+    float* testdata = new float[test_size*3];
+    float* data = new float[fsize*8];
+    float* psig = new float[fsize];
+    for (size_t i = 0; i < fsize; i++)
+    {
+        int i8 = i * 8;
+        // point
+        const pcl::PointNormal& point = dataCloud.points[i];
+        data[i8] = point.x;
+        data[i8 + 1] = point.y;
+        data[i8 + 2] = point.z;
+        data[i8 + 3] = 1;
+        data[i8 + 4] = point.normal_x;
+        data[i8 + 5] = point.normal_y;
+        data[i8 + 6] = point.normal_z;
+        data[i8 + 7] = 0.0005;
+        psig[i] = 0.02;
+    }
+    for (size_t i = 0; i < test_size; i++)
+    {
+        int i3 = i * 3;
+        // point
+        const pcl::PointXYZ& point = testCloud.points[i];
+        testdata[i3] = point.x;
+        testdata[i3 + 1] = point.y;
+        testdata[i3 + 2] = point.z;
+    }
+
+    GPFUNHandle gm = nullptr;
+    create_gp_func(&gm);
+
+    int succeed = update_gp(gm, data, psig, fsize);
+    float result[200000] = { -1 };
+    int flag = test_gp(gm, testdata, 200000, result);
     return  1;
 
 }
