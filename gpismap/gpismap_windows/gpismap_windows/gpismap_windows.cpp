@@ -104,10 +104,10 @@ int main_0()
 int main()
 {
     std::cout << "Hello World!\n";
-    const std::string filepath = "//koko/qianqian/recording_Town10HD/dense_no_occlusion/";
-    const std::string datapath = filepath + "train_pts/sample2_nan.ply";
-    const std::string testpath = filepath + "test_pts/resolution_0.05/nan.ply";
-    const std::string priorpath = filepath + "train_pts/sample2_nan2.ply";
+    const std::string filepath = "D:/carla/dense_no_occlusion/";
+    const std::string datapath = filepath + "train_pts/nan.ply";
+    const std::string testpath = filepath + "test_pts/resolution_0.05/nant.ply";
+    const std::string priorpath = filepath + "train_pts/nan2.ply";
 
     pcl::PointCloud<pcl::PointNormal> dataCloud;
     pcl::PointCloud<pcl::PointNormal> testCloud;
@@ -158,14 +158,25 @@ int main()
     delete[] psig;
     float* result = new float[test_size*8]();
     int flag = test_gp(gm, testdata, test_size, result);
-    delete[] testdata;  
+    //delete[] testdata;  
+    float max = std::numeric_limits<float>::min();
+    float min = std::numeric_limits<float>::max();
+    std::cout<<max<<" "<<min<<"\n";
     for (size_t i = 0; i < test_size; i++)
     {
         int i8 = i * 8;
         // point
         testCloud.points[i].normal_x = result[i8];
         testCloud.points[i].normal_y = result[i8+4];
+        if (result[i8] > max) {
+            max = result[i8];
+        }
+        if (result[i8] < min) {
+            min = result[i8];
+        }
+        //std::cout << i<<": "<< result[i8] << " " << result[i8 + 4] << "\n";
     }
+    std::cout << max << " " << min << "\n";
     pcl::io::savePLYFileBinary(filepath + "output/3d_gmmgp/meta_data/nan.ply", testCloud);
     delete[] result;    
     return  1;
