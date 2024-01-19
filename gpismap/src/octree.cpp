@@ -214,6 +214,12 @@ void OcTree::UpdateGP(const vecNode3& samples)
     if (gp != nullptr)
         gp->train(samples);
 }
+// z77 modify
+void OcTree::UpdateGP_s(const vecNode3& samples)
+{
+    if (gp != nullptr)
+        gp->train_s(samples);
+}
 
 bool OcTree::InsertToParent(std::shared_ptr<Node3> n){
     float l = getHalfLength();

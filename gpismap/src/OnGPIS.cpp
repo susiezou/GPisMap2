@@ -153,6 +153,65 @@ void OnGPIS::train(const vecNode3& samples){
     return;
 }
 
+void OnGPIS::train_s(const vecNode3& samples) {
+    reset();
+
+    int N = samples.size();
+    int dim = 3;
+
+    if (N > 0) {
+        nSamples = N;
+        x = EMatrixX::Zero(dim, N);
+        EMatrixX grad = EMatrixX::Zero(dim, N);
+        EVectorX f = EVectorX::Zero(N);
+        sigx = EVectorX::Zero(N);
+        EVectorX siggrad = EVectorX::Zero(N);
+
+        gradflag.clear();
+        gradflag.resize(N, 0.0);
+
+        EMatrixX grad_valid(N, dim);
+
+        int k = 0;
+        int count = 0;
+        for (auto it = samples.cbegin(); it != samples.cend(); it++, k++) {
+            x(0, k) = (*it)->getPosX();
+            x(1, k) = (*it)->getPosY();
+            x(2, k) = (*it)->getPosZ();
+            grad(0, k) = (*it)->getGradX();
+            grad(1, k) = (*it)->getGradY();
+            grad(2, k) = (*it)->getGradZ();
+            f(k) = (*it)->getVal();
+            sigx(k) = (*it)->getPosNoise();
+            siggrad(k) = (*it)->getGradNoise();
+            if (siggrad(k) > 0.1001 || (fabs(grad(0, k)) < 1e-6 && fabs(grad(1, k)) < 1e-6 && fabs(grad(2, k)) < 1e-6)) {
+                gradflag[k] = 0.0;
+                sigx(k) = 2.0;
+            }
+            else {
+                gradflag[k] = 1.0;
+                grad_valid(count, 0) = grad(0, k);
+                grad_valid(count, 1) = grad(1, k);
+                grad_valid(count, 2) = grad(2, k);
+                count++;
+            }
+        }
+        grad_valid.conservativeResize(count, 3);
+        EVectorX y(N + dim * count);
+        y << f, grad_valid.col(0), grad_valid.col(1), grad_valid.col(2);
+        EMatrixX K = matern32_sparse_deriv1_3D(x, gradflag, param.scale, sigx, siggrad, param.noise);
+
+        L = K.llt().matrixL();
+
+        alpha = y;
+        L.template triangularView<Eigen::Lower>().solveInPlace(alpha);
+        L.transpose().template triangularView<Eigen::Upper>().solveInPlace(alpha);
+
+        trained = true;
+
+    }
+    return;
+}
 
 void OnGPIS::test(const EMatrixX& xt,EVectorX& val, EMatrixX& gradval, EVectorX& var){
 
@@ -179,7 +238,7 @@ void OnGPIS::test(const EMatrixX& xt,EVectorX& val, EMatrixX& gradval, EVectorX&
     return;
 }
 
-void OnGPIS::testSinglePoint(const EVectorX& xt, float& val, float grad[],float var[])
+void OnGPIS::testSinglePoint(const EVectorX& xt, float& val, float grad[], float var[])
 {
     if (!isTrained())
         return;
@@ -188,6 +247,47 @@ void OnGPIS::testSinglePoint(const EVectorX& xt, float& val, float grad[],float 
         return;
 
     EMatrixX K = matern32_sparse_deriv1(x, gradflag, xt, param.scale);
+
+    EVectorX res = K.transpose() * alpha;
+    val = res(0);
+    if (res.size() == 3) {
+        grad[0] = res(1);
+        grad[1] = res(2);
+    }
+    else if (res.size() == 4) {
+        grad[0] = res(1);
+        grad[1] = res(2);
+        grad[2] = res(3);
+    }
+
+    L.template triangularView<Eigen::Lower>().solveInPlace(K);
+    K = K.array().pow(2);
+    EVectorX v = K.colwise().sum();
+
+    if (v.size() == 3) {
+        var[0] = 1.01 - v(0);
+        var[1] = three_over_scale + 0.1 - v(1);
+        var[2] = three_over_scale + 0.1 - v(2);
+    }
+    else if (v.size() == 4) { // Noise param!
+        var[0] = 1.001 - v(0);
+        var[1] = three_over_scale + 0.001 - v(1);
+        var[2] = three_over_scale + 0.001 - v(2);
+        var[3] = three_over_scale + 0.001 - v(3);
+    }
+
+    return;
+}
+
+void OnGPIS::testSinglePoint_s(const EVectorX& xt, EVectorX& sig2, float& val, float grad[],float var[])
+{
+    if (!isTrained())
+        return;
+
+    if (x.rows() != xt.size())
+        return;
+    
+    EMatrixX K = matern32_sparse_deriv1_3D(x, gradflag, xt, param.scale, sigx, sig2);
 
     EVectorX res = K.transpose()*alpha;
     val = res(0);
@@ -206,12 +306,12 @@ void OnGPIS::testSinglePoint(const EVectorX& xt, float& val, float grad[],float 
     EVectorX v = K.colwise().sum();
 
     if (v.size() == 3){
-        var[0] = 1.01-v(0);
+        var[0] = sig2(0) - v(0);
         var[1] = three_over_scale + 0.1 - v(1);
         var[2] = three_over_scale + 0.1 - v(2);
     }
     else if (v.size() == 4){ // Noise param!
-        var[0] = 1.001-v(0);
+        var[0] = sig2(0) - v(0);
         var[1] = three_over_scale + 0.001 - v(1);
         var[2] = three_over_scale + 0.001 - v(2);
         var[3] = three_over_scale + 0.001 - v(3);
