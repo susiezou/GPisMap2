@@ -40,6 +40,7 @@ class OnGPIS{
       EMatrixX x;
       EMatrixX L;
       EVectorX alpha;
+      EMatrixX sigx;
       std::vector<float> gradflag;
 
       onGPISparam param;     // defined in strct.h
@@ -65,9 +66,11 @@ public:
 
     void train(const vecNode& samples);
     void train(const vecNode3& samples);
+    void train_s(const vecNode3& samples);
 
     void test(const EMatrixX& xt,EVectorX& val, EMatrixX& gradval, EVectorX& var);
     void testSinglePoint(const EVectorX& xt, float& val, float grad[],float var[]);
+    void testSinglePoint_s(const EVectorX& xt, EVectorX&, float& val, float grad[], float var[]);
     void test2Dpoint(const EVectorX& xt, float& val, float& gradx, float& grady, float& varval ,float& vargradx, float& vargrady);
     void test2Dpoint(float x, float y, float& val, float& gradx, float& grady, float& varval ,float& vargradx, float& vargrady);
 };

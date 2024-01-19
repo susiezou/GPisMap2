@@ -58,11 +58,12 @@ public:
     void updateGPs();
     void updateGPs_kernel(int thread_idx, int start_idx, int end_idx, std::vector<OcTree*>& nodes_to_update);
     void addNewMeas(const float* samples, float* p_sig, int N);
-    void addNewMeas_kernel(const float* samples, int, int, int);
+    void addNewMeas_kernel(const float* samples, float*, int, int, int);
 
     void test(const float* samples, float* p_sig, int M, float* val, float* var);
     bool test(float* x, int leng, float* res);
     void test_kernel(int thread_idx, int start_idx, int end_idx, float* x, float* res);
+    void test_kernel_s(int thread_idx, int start_idx, int end_idx, float* x, float* res);
     void testSinglePoint(const EVectorX& xt, float& val, float grad[], float var[]);
 
 };
