@@ -22,3 +22,6 @@ jnb/*
 /gpismap/gpismap_windows/gpismap_windows/x64/Release
 *.exe
 *.pdb
+/gpismap/gpismap_windows/gpismap_windows/gpismap_windows.vcxproj
+/gpismap/gpismap_windows/gpismap_windows/x64/Release
+/gpismap/gpismap_windows/x64/Release
