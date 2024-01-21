@@ -15,3 +15,7 @@ jnb/*
 /gpismap/gpismap_windows/gpismap_windows/x64/Debug/gpismap_windows.tlog
 /gpismap/gpismap_windows/gpismap_windows/x64/Debug
 /gpismap/gpismap_windows/x64/Debug
+/out/build/x64-Debug
+/gpismap/gpismap_windows/gpismap_windows/x64/Release
+*.exe
+*.pdb
