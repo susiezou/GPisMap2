@@ -168,6 +168,7 @@ int main()
         testCloud.points[i].normal_x = result[i8] + testCloud.points[i].normal_x;
         testCloud.points[i].normal_y = result[i8 + 4];
     }
+    std::cout << max << " " << min << "\n";
     pcl::io::savePLYFileBinary(filepath + "output/3d_gmmgp/meta_data/nan.ply", testCloud);
     delete[] result;    
     return  1;
