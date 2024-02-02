@@ -199,7 +199,7 @@ class GPisMap3D():
         dim = test_x.shape[1]
         leng = test_x.shape[0]
 
-        res = np.empty((leng,2*(1+dim)),dtype=np.float32)
+        res = np.zeros((leng,2*(1+dim)),dtype=np.float32)
 
         _LIB.test_gpm3d(self.gpmap,
                 as_float_c_array(test_x),

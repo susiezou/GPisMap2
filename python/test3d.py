@@ -124,6 +124,7 @@ def v_to_sdf(v, vvar, lamda):
     sdf = -1/lamda * np.log(v)  # np.exp(-lamda * d)
     a2 = (1/lamda)**2 / (v ** 2)
     var = np.multiply(a2,  vvar)
+    var[var > 2] = 2
     return sdf, var
 
 
@@ -135,7 +136,7 @@ def main():
     t_record['building'] = []
     t_record['train'] = []
     t_record['test'] = []; t_record['test_number'] = []
-    tname = 'GPIS'
+    tname = 'GPIS2'
     bias = 0.2
 
     gp = GPisMap3D()
@@ -163,7 +164,7 @@ def main():
         gp_cloud_dir = filepath + str(building[0]) + '/output/gpismap/meta_data/'
         os.makedirs(gp_cloud_dir, exist_ok=True)
         test_xyz = np.array(o3d.io.read_point_cloud("C:/Users/zou/data/localization/julia_map/building_seg/" + str(building[0]) +
-                                    "/output/bgk/resolution_0.05/test_pts.pcd").points)
+                                    "/output/bgk/resolution_0.09/test_pts.pcd").points)
         t_train = {}
         t_train['train'] = []
         t_train['train_number'] = []
@@ -195,6 +196,8 @@ def main():
             # test_xyz = generate_test_point(I, f, tr, faca.trans_para, max_resol=0.05, inside_num=2)
         tic = time.perf_counter()
         sdf, var = show_mesh_3d(gp, (test_xyz[:, 0], test_xyz[:,1], test_xyz[:, 2]), bias=bias)
+        if gp.loggp:
+            sdf, var = v_to_sdf(sdf, var, 20)
         toc = time.perf_counter()
         print(f"Test time: {toc - tic:0.4f} seconds...")
         pcd = o3d.geometry.PointCloud()
@@ -205,7 +208,7 @@ def main():
         pcd.normals = o3d.utility.Vector3dVector(world_n)
         # save .pcd
         pcd.translate(faca.trans_para.trans)
-        o3d.io.write_point_cloud(gp_cloud_dir + "pc_depth_"+tname+".pcd", pcd)
+        o3d.io.write_point_cloud(gp_cloud_dir + "pc_depth_"+tname+"_0.09.pcd", pcd)
         t_record['building'].append(building[0])
         t_record['train'].append(t_train)
         t_record['test'].append(toc - tic)

@@ -13,7 +13,7 @@ loggpis = True
 if loggpis:
     mapdll = 'loggpis_Dll.dll'
 else:
-    mapdll = 'gpismap_Dll.dll'
+    mapdll = 'gpismap2_Dll.dll'
 
 
 def _load_lib():
