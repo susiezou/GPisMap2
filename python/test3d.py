@@ -119,8 +119,8 @@ def generate_test_point(I, f, tr, trans_para, max_resol=0.05, inside_num=2):
 
 def v_to_sdf(v, vvar, lamda):
     v = np.abs(v)
-    abn = v <= 1e-7
-    v[abn] = 1e-7
+    abn = v <= 1e-18
+    v[abn] = 1e-18
     sdf = -1/lamda * np.log(v)  # np.exp(-lamda * d)
     a2 = (1/lamda)**2 / (v ** 2)
     var = np.multiply(a2,  vvar)
