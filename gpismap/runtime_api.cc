@@ -190,7 +190,7 @@ int update_gp2(GPFUNHandle gh, float* data, float* p_sig, int N) {
 int test_gp2(GPFUNHandle gh, float* x, int M, float* val) {
     if (gh != NULL) {
         gh->test(x, M, val);
-        float max = 0;
+        /*float max = 0;
         float min = 100;
         for (size_t i = 0; i < M; i++)
         {
@@ -202,7 +202,7 @@ int test_gp2(GPFUNHandle gh, float* x, int M, float* val) {
                 min = val[i8];
             }
         }
-        std::cout << max << "," << min << std::endl;
+        std::cout << max << "," << min << std::endl;*/
         return 1;
     }
     return 0;

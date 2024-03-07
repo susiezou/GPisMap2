@@ -69,7 +69,7 @@ double* read_bin_double(const char* filepath, long& file_size) {
 int main_0()
 {
     std::cout << "Hello World!\n";
-    const std::string frame = "977";
+    const std::string frame = "18";
     const std::string filepath = "../../../data/3D/building/";
     const std::string datapath = filepath + "depth/f"+frame+".bin";
     const std::string posepath = filepath + "pose/f"+frame+"pose.bin";
@@ -93,7 +93,7 @@ int main_0()
         int(cam[4]), int(cam[5])
     );
 
-    int succeed = update_scan3d(gm, data, fsize, pose);
+    int succeed = update_gpm3d(gm, data, fsize, pose);
     delete[] data;
     float result[200000] = { -1 };
     int flag = test_gpm3d(gm, testdata, 3, 3000, result);
@@ -105,9 +105,9 @@ int main()
 {
     std::cout << "Hello World!\n";
     const std::string filepath = "//koko/qianqian/recording_Town10HD/dense_no_occlusion/";
-    const std::string datapath = filepath + "train_pts/nan.ply";
-    const std::string testpath = filepath + "test_pts/resolution_0.05/nant.ply";
-    const std::string priorpath = filepath + "train_pts/nan2.ply";
+    const std::string datapath = filepath + "train_pts/8_x.ply";
+    const std::string testpath = filepath + "test_pts/resolution_0.05/8_t.ply";
+    const std::string priorpath = filepath + "train_pts/8_prior.ply";
 
     pcl::PointCloud<pcl::PointNormal> dataCloud;
     pcl::PointCloud<pcl::PointNormal> testCloud;
@@ -168,7 +168,7 @@ int main()
         testCloud.points[i].normal_x = result[i8] + testCloud.points[i].normal_x;
         testCloud.points[i].normal_y = result[i8 + 4];
     }
-    std::cout << max << " " << min << "\n";
+    //std::cout << max << " " << min << "\n";
     pcl::io::savePLYFileBinary(filepath + "output/3d_gmmgp/meta_data/nan.ply", testCloud);
     delete[] result;    
     return  1;
