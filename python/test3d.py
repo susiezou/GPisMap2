@@ -164,7 +164,7 @@ def main():
         gp_cloud_dir = filepath + str(building[0]) + '/output/gpismap/meta_data/'
         os.makedirs(gp_cloud_dir, exist_ok=True)
         test_xyz = np.array(o3d.io.read_point_cloud("C:/Users/zou/data/localization/julia_map/building_seg/" + str(building[0]) +
-                                    "/output/bgk/resolution_0.09/test_pts.pcd").points)
+                                    "/output/bgk/resolution_0.05/test_pts.pcd").points)
         t_train = {}
         t_train['train'] = []
         t_train['train_number'] = []
@@ -208,7 +208,7 @@ def main():
         pcd.normals = o3d.utility.Vector3dVector(world_n)
         # save .pcd
         pcd.translate(faca.trans_para.trans)
-        o3d.io.write_point_cloud(gp_cloud_dir + "pc_depth_"+tname+"_0.09.pcd", pcd)
+        o3d.io.write_point_cloud(gp_cloud_dir + "pc_depth_"+tname+"_0.05.pcd", pcd)
         t_record['building'].append(building[0])
         t_record['train'].append(t_train)
         t_record['test'].append(toc - tic)

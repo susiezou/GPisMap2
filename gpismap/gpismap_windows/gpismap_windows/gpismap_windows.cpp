@@ -66,10 +66,10 @@ double* read_bin_double(const char* filepath, long& file_size) {
     return NULL;
 }
 
-int main_0()
+int main()
 {
     std::cout << "Hello World!\n";
-    const std::string frame = "18";
+    const std::string frame = "8";
     const std::string filepath = "../../../data/3D/building/";
     const std::string datapath = filepath + "depth/f"+frame+".bin";
     const std::string posepath = filepath + "pose/f"+frame+"pose.bin";
@@ -79,7 +79,7 @@ int main_0()
     float* pose = read_bin(posepath.c_str(), posesize);
     float* cam = read_bin(campath.c_str(), camsize);
     fsize = cam[4] * cam[5];
-    test_size = fsize * 3;
+    test_size = 1346752 * 3;
     float* data = read_bin(datapath.c_str(), fsize);
     float* testdata = read_bin(testpath.c_str(), test_size);
 
@@ -95,13 +95,13 @@ int main_0()
 
     int succeed = update_gpm3d(gm, data, fsize, pose);
     delete[] data;
-    float result[200000] = { -1 };
-    int flag = test_gpm3d(gm, testdata, 3, 3000, result);
+    float* result = new float[test_size * 8/3]();
+    int flag = test_gpm3d(gm, testdata, 3, test_size/3, result);
     return  1;
 
 }
 
-int main()
+int main_0()
 {
     std::cout << "Hello World!\n";
     const std::string filepath = "//koko/qianqian/recording_Town10HD/dense_no_occlusion/";
