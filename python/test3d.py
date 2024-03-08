@@ -134,6 +134,7 @@ def v_to_sdf(v, vvar, lamda):
 def main():
 
     filepath = "C:/Users/zou/source/repos/susiezou/ransac_app/results_0428_amk_new/"
+    testdata = "C:/Users/zou/data/localization/julia_map/building_seg/"
     buildings = load_map(filepath, id=8)
     t_record = {}
     t_record['building'] = []
@@ -169,7 +170,7 @@ def main():
         gp_cloud_dir = filepath + str(building[0]) + '/output/gpismap/meta_data/'
         os.makedirs(gp_cloud_dir, exist_ok=True)
         test_xyz = np.array(o3d.io.read_point_cloud(testdata + str(building[0]) +
-                                    "/output/bgk/resolution_0.05/test_pts.pcd").points)
+                                    "/output/bgk/resolution_0.09/test_pts.pcd").points)
         t_train = np.array([0, 0])
         for faca in faca_group:
             pts_global = faca.pts_local @ (faca.trans_para.uvk).T
@@ -192,8 +193,8 @@ def main():
             gp.update(I.astype(np.float32), tr, Rot)
             toc = time.perf_counter()
             print(f"Elapsed time: {toc - tic:0.4f} seconds...")
-            t_train[1]+=(toc - tic)
-            t_train[0]+=(len(pts_local))
+            t_train[1] += (toc - tic)
+            t_train[0] += (pts_local.shape[0])
 
             # testing:
             # test_xyz = generate_test_point(I, f, tr, faca.trans_para, max_resol=0.05, inside_num=2)

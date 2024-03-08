@@ -66,22 +66,42 @@ double* read_bin_double(const char* filepath, long& file_size) {
     return NULL;
 }
 
-int main()
+int main0()
 {
     std::cout << "Hello World!\n";
-    const std::string frame = "8";
+    const std::string frame = "10";
     const std::string filepath = "../../../data/3D/building/";
     const std::string datapath = filepath + "depth/f"+frame+".bin";
     const std::string posepath = filepath + "pose/f"+frame+"pose.bin";
     const std::string campath = filepath + "f" + frame + "cam.bin";
-    const std::string testpath = filepath + "depth/f"+frame+"test.bin";
+    std::string testpath = filepath + "depth/f"+frame+"test.bin";
     long fsize, test_size, posesize = 12, camsize = 6;
     float* pose = read_bin(posepath.c_str(), posesize);
     float* cam = read_bin(campath.c_str(), camsize);
     fsize = cam[4] * cam[5];
-    test_size = 1346752 * 3;
+    test_size = 143040*3;//f8:1346752 * 3;
     float* data = read_bin(datapath.c_str(), fsize);
     float* testdata = read_bin(testpath.c_str(), test_size);
+    
+     
+    testpath = "//koko/qianqian/recording_Town10HD/dense_no_occlusion/test_pts/resolution_0.05/10_t.ply";
+    pcl::PointCloud<pcl::PointNormal> testCloud;
+    if (pcl::io::loadPLYFile<pcl::PointNormal>(testpath.c_str(), testCloud) == -1) {
+        PCL_ERROR("Couldn't read the file\n");
+        return -1;
+    }
+    test_size = testCloud.points.size();
+    //float* testdata = new float[test_size * 3]();
+    //for (size_t i = 0; i < test_size; i++)
+    //{
+    //    int i3 = i * 3;
+    //    // point
+    //    const pcl::PointNormal& point = testCloud.points[i];
+    //    testdata[i3] = point.x;
+    //    testdata[i3 + 1] = point.y;
+    //    testdata[i3 + 2] = point.z;
+    //    //testdata[i3 + 3] = point.normal_y;
+    //}
 
     GPM3Handle gm = nullptr;
     create_gpm3d_instance(&gm);
@@ -95,19 +115,29 @@ int main()
 
     int succeed = update_gpm3d(gm, data, fsize, pose);
     delete[] data;
-    float* result = new float[test_size * 8/3]();
-    int flag = test_gpm3d(gm, testdata, 3, test_size/3, result);
+    float* result = new float[test_size * 8]();
+    int flag = test_gpm3d(gm, testdata, 3, test_size, result);
+    for (size_t i = 0; i < test_size; i++)
+    {
+        int i8 = i * 8;
+        // point
+        testCloud.points[i].normal_x = result[i8] + testCloud.points[i].normal_x;
+        testCloud.points[i].normal_y = result[i8 + 4];
+    }
+    //std::cout << max << " " << min << "\n";
+    pcl::io::savePLYFileBinary(filepath + "f10out.ply", testCloud);
+    delete[] result;
     return  1;
 
 }
 
-int main_0()
+int main()
 {
     std::cout << "Hello World!\n";
     const std::string filepath = "//koko/qianqian/recording_Town10HD/dense_no_occlusion/";
-    const std::string datapath = filepath + "train_pts/8_x.ply";
-    const std::string testpath = filepath + "test_pts/resolution_0.05/8_t.ply";
-    const std::string priorpath = filepath + "train_pts/8_prior.ply";
+    const std::string datapath = filepath + "train_pts/10_x.ply";
+    const std::string testpath = filepath + "test_pts/resolution_0.05/10_t.ply";
+    const std::string priorpath = filepath + "train_pts/10_prior.ply";
 
     pcl::PointCloud<pcl::PointNormal> dataCloud;
     pcl::PointCloud<pcl::PointNormal> testCloud;
