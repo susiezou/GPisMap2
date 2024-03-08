@@ -12,11 +12,19 @@
 void AppGPIS::reset() {
     nSamples = 0;
     trained = false;
+    activeSet.clear();
 
+    if (t != nullptr) {
+        delete t;
+        t = nullptr;
+    }
     x.resize(0, 0);
     L.resize(0, 0);
     alpha.resize(0);
+    prior_sig.resize(0);
+    p_sig_valid.resize(0);
     gradflag.clear();
+    obs_y.clear();
 
     return;
 }

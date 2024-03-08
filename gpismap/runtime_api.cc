@@ -159,7 +159,7 @@ int get_samples_gpm3d(GPM3Handle gh, float * x,  int dim,  int leng, bool grad, 
 
 //////// App GP func /////////
 int create_gp_func(GPFUNHandle *gh) {
-    *gh = new AppGPIS(0.08, 0.01);
+    *gh = new AppGPIS(0.08, 0.0004);
     return 1;
 }
 int update_gp(GPFUNHandle gh, float* data, float* p_sig, int N) {
