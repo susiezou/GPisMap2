@@ -686,8 +686,15 @@ void AppGPIS::test_kernel_s(int thread_idx,
                     int m3 = m_1 * 3;
                     int m4 = m_1 * 4;
                     gp = octs[idx[m_1]]->getGP();
-                    gp->testSinglePoint_s(xt, sig2, f2[m_1], &grad2[m3], &var2[m4]);
+                    if (gp != nullptr) {
+                        gp->testSinglePoint_s(xt, sig2, f2[m_1], &grad2[m3], &var2[m4]);
+                    }
+                    else {
+                        need_wsum = false;
+                        break;
+                    }
                 }
+            
 
                 if (need_wsum) {
                     f2[0] = res[k8];
