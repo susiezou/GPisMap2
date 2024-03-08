@@ -532,7 +532,7 @@ void AppGPIS::test_kernel(int thread_idx,
         int k8 = 8 * i;
 
         // query Cs
-        AABB3 searchbb(xt(0), xt(1), xt(2), (float)GPISMAP3_TREE_CLUSTER_HALF_LENGTH * 30.0);
+        AABB3 searchbb(xt(0), xt(1), xt(2), (float)GPISMAP3_TREE_CLUSTER_HALF_LENGTH * 3.0);
         std::vector<OcTree*> octs;
         std::vector<float> sqdst;
         t->QueryNonEmptyLevelC(searchbb, octs, sqdst);
@@ -644,7 +644,7 @@ void AppGPIS::test_kernel_s(int thread_idx,
         int k8 = 8 * i;
 
         // query Cs
-        AABB3 searchbb(xt(0), xt(1), xt(2), (float)GPISMAP3_TREE_CLUSTER_HALF_LENGTH * 30.0);
+        AABB3 searchbb(xt(0), xt(1), xt(2), (float)GPISMAP3_TREE_CLUSTER_HALF_LENGTH * 5.0);
         std::vector<OcTree*> octs;
         std::vector<float> sqdst;
         t->QueryNonEmptyLevelC(searchbb, octs, sqdst);
