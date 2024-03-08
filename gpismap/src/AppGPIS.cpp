@@ -644,12 +644,12 @@ void AppGPIS::test_kernel_s(int thread_idx,
         int k8 = 8 * i;
 
         // query Cs
-        AABB3 searchbb(xt(0), xt(1), xt(2), (float)GPISMAP3_TREE_CLUSTER_HALF_LENGTH * 5.0);
+        AABB3 searchbb(xt(0), xt(1), xt(2), (float)GPISMAP3_TREE_CLUSTER_HALF_LENGTH * 8.0);
         std::vector<OcTree*> octs;
         std::vector<float> sqdst;
         t->QueryNonEmptyLevelC(searchbb, octs, sqdst);
 
-        // res[k8 + 4] = 1.0 + param.noise; // variance of sdf value
+        res[k8 + 4] = sig2(0); // variance of sdf value
 
         if (octs.size() == 1) {
             std::shared_ptr<OnGPIS> gp = octs[0]->getGP();
