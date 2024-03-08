@@ -471,7 +471,7 @@ bool AppGPIS::test(float* x, int leng, float* res) {
     if (x == nullptr || leng < 1)
         return false;
 
-    int num_threads = 1;// std::thread::hardware_concurrency();
+    int num_threads = std::thread::hardware_concurrency();
     int num_threads_to_use = num_threads;
     if (leng < num_threads) {
         num_threads_to_use = leng;
