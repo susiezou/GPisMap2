@@ -69,7 +69,7 @@ double* read_bin_double(const char* filepath, long& file_size) {
 int main_0()
 {
     std::cout << "Hello World!\n";
-    const std::string frame = "977";
+    const std::string frame = "18";
     const std::string filepath = "../../../data/3D/building/";
     const std::string datapath = filepath + "depth/f"+frame+".bin";
     const std::string posepath = filepath + "pose/f"+frame+"pose.bin";
@@ -93,7 +93,7 @@ int main_0()
         int(cam[4]), int(cam[5])
     );
 
-    int succeed = update_scan3d(gm, data, fsize, pose);
+    int succeed = update_gpm3d(gm, data, fsize, pose);
     delete[] data;
     float result[200000] = { -1 };
     int flag = test_gpm3d(gm, testdata, 3, 3000, result);
@@ -104,10 +104,10 @@ int main_0()
 int main()
 {
     std::cout << "Hello World!\n";
-    const std::string filepath = "D:/carla/dense_no_occlusion/";
-    const std::string datapath = filepath + "train_pts/nan.ply";
-    const std::string testpath = filepath + "test_pts/resolution_0.05/nant.ply";
-    const std::string priorpath = filepath + "train_pts/nan2.ply";
+    const std::string filepath = "//koko/qianqian/recording_Town10HD/dense_no_occlusion/";
+    const std::string datapath = filepath + "train_pts/8_x.ply";
+    const std::string testpath = filepath + "test_pts/resolution_0.05/8_t.ply";
+    const std::string priorpath = filepath + "train_pts/8_prior.ply";
 
     pcl::PointCloud<pcl::PointNormal> dataCloud;
     pcl::PointCloud<pcl::PointNormal> testCloud;
@@ -122,7 +122,7 @@ int main()
         return -1;
     }
     long fsize = dataCloud.points.size(), test_size=testCloud.points.size();
-    float* testdata = new float[test_size*3]();
+    float* testdata = new float[test_size*4]();
     float* data = new float[fsize*8]();
     float* psig = new float[fsize]();
     for (size_t i = 0; i < fsize; i++)
@@ -138,16 +138,18 @@ int main()
         data[i8 + 5] = point.normal_y;
         data[i8 + 6] = point.normal_z;
         data[i8 + 7] = 0.0005;
-        psig[i] = 0.02;
+        psig[i] = dataCloud2.points[i].normal_y;
     }
+
     for (size_t i = 0; i < test_size; i++)
     {
-        int i3 = i * 3;
+        int i3 = i * 4;
         // point
         const pcl::PointNormal& point = testCloud.points[i];
         testdata[i3] = point.x;
         testdata[i3 + 1] = point.y;
         testdata[i3 + 2] = point.z;
+        testdata[i3 + 3] = point.normal_y;
     }
 
     GPFUNHandle gm = nullptr;
@@ -156,27 +158,17 @@ int main()
     int succeed = update_gp(gm, data, psig, fsize);
     delete[] data;
     delete[] psig;
-    float* result = new float[test_size*8]();
+    float* result = new float[test_size * 8]();
     int flag = test_gp(gm, testdata, test_size, result);
-    //delete[] testdata;  
-    float max = std::numeric_limits<float>::min();
-    float min = std::numeric_limits<float>::max();
-    std::cout<<max<<" "<<min<<"\n";
+    delete[] testdata;  
     for (size_t i = 0; i < test_size; i++)
     {
         int i8 = i * 8;
         // point
-        testCloud.points[i].normal_x = result[i8];
-        testCloud.points[i].normal_y = result[i8+4];
-        if (result[i8] > max) {
-            max = result[i8];
-        }
-        if (result[i8] < min) {
-            min = result[i8];
-        }
-        //std::cout << i<<": "<< result[i8] << " " << result[i8 + 4] << "\n";
+        testCloud.points[i].normal_x = result[i8] + testCloud.points[i].normal_x;
+        testCloud.points[i].normal_y = result[i8 + 4];
     }
-    std::cout << max << " " << min << "\n";
+    //std::cout << max << " " << min << "\n";
     pcl::io::savePLYFileBinary(filepath + "output/3d_gmmgp/meta_data/nan.ply", testCloud);
     delete[] result;    
     return  1;

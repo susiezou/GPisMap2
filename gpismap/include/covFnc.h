@@ -48,6 +48,11 @@ EMatrixX matern32_sparse_deriv1(EMatrixX const& x1, std::vector<float> gradflag,
 EMatrixX matern32_sparse_deriv1(EMatrixX const& x1, std::vector<float> gradflag,
                                           EMatrixX const& x2, float scale_param);
 
+EMatrixX matern32_sparse_deriv1_3D(EMatrixX const& x1, std::vector<float> gradflag,
+    float scale_param, EVectorX const& sigx, EVectorX const& siggrad, float noise);
+EMatrixX matern32_sparse_deriv1_3D(EMatrixX const& x1, std::vector<float> gradflag,
+    EMatrixX const& x2, float scale_param, EMatrixX const& sig1, EMatrixX const& sig2);
+
 //////////////////////////////////////////
 // Convariance matrix computation using the Ornstein-Uhlenbeck cov function.
 // Note:

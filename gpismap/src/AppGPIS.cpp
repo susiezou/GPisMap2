@@ -216,7 +216,7 @@ void AppGPIS::addNewMeas(const float* samples, float* p_sig, int N) {
     for (int i = 0; i < num_leftovers; ++i) {
         std::thread thread_i = std::thread(&AppGPIS::addNewMeas_kernel,
             std::ref(*this),
-            samples,
+            samples,p_sig,
             i,
             element_cursor,
             element_cursor + batch_size + 1);
@@ -226,7 +226,7 @@ void AppGPIS::addNewMeas(const float* samples, float* p_sig, int N) {
     for (int i = num_leftovers; i < num_threads_to_use; ++i) {
         std::thread thread_i = std::thread(&AppGPIS::addNewMeas_kernel,
             std::ref(*this),
-            samples,
+            samples,p_sig,
             i,
             element_cursor,
             element_cursor + batch_size);
@@ -242,7 +242,7 @@ void AppGPIS::addNewMeas(const float* samples, float* p_sig, int N) {
     return;
 }
 
-void AppGPIS::addNewMeas_kernel(const float* samples, int thread_idx, int start_idx, int end_idx) 
+void AppGPIS::addNewMeas_kernel(const float* samples, float* psig, int thread_idx, int start_idx, int end_idx) 
 {
     if (t == nullptr || nSamples < 1)
         return;
@@ -277,7 +277,7 @@ void AppGPIS::addNewMeas_kernel(const float* samples, int thread_idx, int start_
 
         /////////////////////////////////////////////////////////////////
         // update the point
-        p->updateData(samples[k8 + 3], param.noise, grad, samples[k8 + 7], NODE_TYPE::HIT);
+        p->updateData(samples[k8 + 3], psig[k], grad, samples[k8 + 7], NODE_TYPE::HIT);
 
         // supposed to have one element
         auto itv = vecInserted.cbegin();
@@ -378,7 +378,7 @@ void AppGPIS::updateGPs_kernel(int thread_idx,
             t->QueryRange(searchbb, res);
             if (res.size() > 0) {
                 (*it)->InitGP(param.scale, param.noise);
-                (*it)->UpdateGP(res);
+                (*it)->UpdateGP_s(res);
             }
         }
     }
@@ -478,7 +478,7 @@ bool AppGPIS::test(float* x, int leng, float* res) {
     int element_cursor = 0;
 
     for (int i = 0; i < num_leftovers; ++i) {
-        std::thread thread_i = std::thread(&AppGPIS::test_kernel,
+        std::thread thread_i = std::thread(&AppGPIS::test_kernel_s,
             std::ref(*this),
             i,
             element_cursor,
@@ -489,7 +489,7 @@ bool AppGPIS::test(float* x, int leng, float* res) {
 
     }
     for (int i = num_leftovers; i < num_threads_to_use; ++i) {
-        std::thread thread_i = std::thread(&AppGPIS::test_kernel,
+        std::thread thread_i = std::thread(&AppGPIS::test_kernel_s,
             std::ref(*this),
             i,
             element_cursor,
@@ -567,6 +567,118 @@ void AppGPIS::test_kernel(int thread_idx,
                     int m4 = m_1 * 4;
                     gp = octs[idx[m_1]]->getGP();
                     gp->testSinglePoint(xt, f2[m_1], &grad2[m3], &var2[m4]);
+                }
+
+                if (need_wsum) {
+                    f2[0] = res[k8];
+                    grad2[0] = res[k8 + 1];
+                    grad2[1] = res[k8 + 2];
+                    grad2[2] = res[k8 + 3];
+                    var2[1] = res[k8 + 5];
+                    var2[2] = res[k8 + 6];
+                    var2[3] = res[k8 + 7];
+                    std::vector<int> idx(numc);
+                    std::size_t n(0);
+                    std::generate(std::begin(idx), std::end(idx), [&] { return n++; });
+                    std::sort(std::begin(idx), std::end(idx), [&](int i1, int i2) { return var2[i1 * 4] < var2[i2 * 4]; });
+
+                    if (var2[idx[0] * 4] < var_thre)
+                    {
+                        res[k8] = f2[idx[0]];
+                        res[k8 + 1] = grad2[idx[0] * 3];
+                        res[k8 + 2] = grad2[idx[0] * 3 + 1];
+                        res[k8 + 3] = grad2[idx[0] * 3 + 2];
+
+                        res[k8 + 4] = var2[idx[0] * 4];
+                        res[k8 + 5] = var2[idx[0] * 4 + 1];
+                        res[k8 + 6] = var2[idx[0] * 4 + 2];
+                        res[k8 + 7] = var2[idx[0] * 4 + 3];
+                    }
+                    else {
+                        float w1 = (var2[idx[0] * 4] - var_thre);
+                        float w2 = (var2[idx[1] * 4] - var_thre);
+                        float w12 = w1 + w2;
+
+                        res[k8] = (w2 * f2[idx[0]] + w1 * f2[idx[1]]) / w12;
+                        res[k8 + 1] = (w2 * grad2[idx[0] * 3] + w1 * grad2[idx[1] * 3]) / w12;
+                        res[k8 + 2] = (w2 * grad2[idx[0] * 3 + 1] + w1 * grad2[idx[1] * 3 + 1]) / w12;
+                        res[k8 + 3] = (w2 * grad2[idx[0] * 3 + 2] + w1 * grad2[idx[1] * 3 + 2]) / w12;
+
+                        res[k8 + 4] = (w2 * var2[idx[0] * 4] + w1 * var2[idx[1] * 4]) / w12;
+                        res[k8 + 5] = (w2 * var2[idx[0] * 4 + 1] + w1 * var2[idx[1] * 4 + 1]) / w12;
+                        res[k8 + 6] = (w2 * var2[idx[0] * 4 + 2] + w1 * var2[idx[1] * 4 + 2]) / w12;
+                        res[k8 + 7] = (w2 * var2[idx[0] * 4 + 3] + w1 * var2[idx[1] * 4 + 3]) / w12;
+                    }
+                }
+            }
+        }
+
+    }
+
+}
+
+void AppGPIS::test_kernel_s(int thread_idx,
+    int start_idx,
+    int end_idx,
+    float* x,
+    float* res) {
+
+    float var_thre = 0.5; // TO-DO
+
+    for (int i = start_idx; i < end_idx; ++i) {
+
+        int k4 = 4 * i;
+        EVectorX xt(3);
+        EVectorX sig2(1);
+        xt << x[k4], x[k4 + 1], x[k4 + 2];
+        sig2 << x[k4 + 3];
+
+        int k8 = 8 * i;
+
+        // query Cs
+        AABB3 searchbb(xt(0), xt(1), xt(2), (float)GPISMAP3_TREE_CLUSTER_HALF_LENGTH * 30.0);
+        std::vector<OcTree*> octs;
+        std::vector<float> sqdst;
+        t->QueryNonEmptyLevelC(searchbb, octs, sqdst);
+
+        // res[k8 + 4] = 1.0 + param.noise; // variance of sdf value
+
+        if (octs.size() == 1) {
+            std::shared_ptr<OnGPIS> gp = octs[0]->getGP();
+            if (gp != nullptr) {
+                gp->testSinglePoint_s(xt, sig2, res[k8], &res[k8 + 1], &res[k8 + 4]);
+            }
+        }
+        else if (sqdst.size() > 1) {
+            // sort by distance
+            std::vector<int> idx(sqdst.size());
+            std::size_t n(0);
+            std::generate(std::begin(idx), std::end(idx), [&] { return n++; });
+            std::sort(std::begin(idx), std::end(idx), [&](int i1, int i2) { return sqdst[i1] < sqdst[i2]; });
+
+            // get THE FIRST gp pointer
+            std::shared_ptr<OnGPIS> gp = octs[idx[0]]->getGP();
+            if (gp != nullptr) {
+                gp->testSinglePoint_s(xt, sig2, res[k8], &res[k8 + 1], &res[k8 + 4]);
+            }
+
+            if (res[k8 + 4] > var_thre) {
+
+                float f2[8];
+                float grad2[8 * 3];
+                float var2[8 * 4];
+
+                var2[0] = res[k8 + 4];
+                int numc = sqdst.size();
+                if (numc > 3) numc = 3;
+                bool need_wsum = true;
+
+                for (int m = 0; m < (numc - 1); m++) {
+                    int m_1 = m + 1;
+                    int m3 = m_1 * 3;
+                    int m4 = m_1 * 4;
+                    gp = octs[idx[m_1]]->getGP();
+                    gp->testSinglePoint_s(xt, sig2, f2[m_1], &grad2[m3], &var2[m4]);
                 }
 
                 if (need_wsum) {

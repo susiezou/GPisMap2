@@ -229,6 +229,7 @@ public:
 
     void InitGP(float scale_param, float noise_param);
     void UpdateGP(const vecNode3& samples);
+    void UpdateGP_s(const vecNode3& samples);
     std::shared_ptr<OnGPIS> const getGP(){return gp;}
     
     bool Remove(std::shared_ptr<Node3> n);
