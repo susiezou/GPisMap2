@@ -135,9 +135,9 @@ int main()
 {
     std::cout << "Hello World!\n";
     const std::string filepath = "//koko/qianqian/recording_Town10HD/dense_no_occlusion/";
-    const std::string datapath = filepath + "train_pts/10_x.ply";
-    const std::string testpath = filepath + "test_pts/resolution_0.05/10_t.ply";
-    const std::string priorpath = filepath + "train_pts/10_prior.ply";
+    const std::string datapath = filepath + "train_pts/16_x.ply";
+    const std::string testpath = filepath + "test_pts/resolution_0.05/16_t.ply";
+    const std::string priorpath = filepath + "train_pts/16_prior.ply";
 
     pcl::PointCloud<pcl::PointNormal> dataCloud;
     pcl::PointCloud<pcl::PointNormal> testCloud;
