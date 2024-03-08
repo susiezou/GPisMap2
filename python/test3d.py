@@ -2,7 +2,7 @@ import copy
 import os
 import pickle
 import sys
-sys.path.append('C:/Users/z77/PycharmProjects/building-mapping/')
+sys.path.append('C:/Users/zou/PycharmProjects/building-mapping/')
 
 from facade import Facade
 
@@ -133,9 +133,8 @@ def v_to_sdf(v, vvar, lamda):
 
 def main():
 
-    filepath = "D:/gpis_25d/"
-    testdata = "D:/localization/julia_map/building_seg/"
-    buildings = load_map(filepath, id=8, ifdirect=True)
+    filepath = "C:/Users/zou/source/repos/susiezou/ransac_app/results_0428_amk_new/"
+    buildings = load_map(filepath, id=8)
     t_record = {}
     t_record['building'] = []
     t_record['train_number'] = []
@@ -212,7 +211,7 @@ def main():
         pcd.normals = o3d.utility.Vector3dVector(world_n)
         # save .pcd
         pcd.translate(faca.trans_para.trans)
-        o3d.io.write_point_cloud(gp_cloud_dir + "pc_depth_"+tname+"_0.05.pcd", pcd)
+        o3d.io.write_point_cloud(gp_cloud_dir + "pc_depth_"+tname+"_0.09.pcd", pcd)
         t_record['building'].append(building[0])
         t_record['train'].append(t_train[1])
         t_record['train_number'].append(t_train[0])
