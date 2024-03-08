@@ -471,7 +471,7 @@ bool AppGPIS::test(float* x, int leng, float* res) {
     if (x == nullptr || leng < 1)
         return false;
 
-    int num_threads = std::thread::hardware_concurrency();
+    int num_threads = 1;// std::thread::hardware_concurrency();
     int num_threads_to_use = num_threads;
     if (leng < num_threads) {
         num_threads_to_use = leng;
@@ -649,7 +649,7 @@ void AppGPIS::test_kernel_s(int thread_idx,
         std::vector<float> sqdst;
         t->QueryNonEmptyLevelC(searchbb, octs, sqdst);
 
-        // res[k8 + 4] = 1.0 + param.noise; // variance of sdf value
+        res[k8 + 4] = sig2(0); // variance of sdf value
 
         if (octs.size() == 1) {
             std::shared_ptr<OnGPIS> gp = octs[0]->getGP();
