@@ -206,7 +206,7 @@ def main():
     xx, yy = np.meshgrid(np.c_[minb[0], maxb[0]], np.c_[minb[1], maxb[1]])
     xy = np.c_[xx.flatten(), yy.flatten(), np.zeros(4) + 2]
 
-    test_xyz = np.array(o3d.io.read_point_cloud(filepath + 'test_pts/resolution_0.05/test_pts_sample2_sdf.ply').points)
+    test_xyz = np.array(o3d.io.read_point_cloud(filepath + 'test_pts/resolution_0.09/test_pts_sample2_sdf.ply').points)
     gp_cloud_dir = filepath + '/output/gpismap/meta_data/frames/'
     os.makedirs(gp_cloud_dir, exist_ok=True)
 
@@ -216,7 +216,7 @@ def main():
         bias = 0
 
     # loop for each frame
-    gp, k, cc = loop_batch_frame(gp, data, traj, center, xy, t_record)
+    gp, k, cc = loop_batch_frame(gp, data, traj, center, xy, t_record,50)
 
     if cc != 0:
         train_gp(gp, t_record)
@@ -233,7 +233,7 @@ def main():
     world_n[:, 1] = var
     pcd.normals = o3d.utility.Vector3dVector(world_n)
     # save .pcd
-    o3d.io.write_point_cloud(gp_cloud_dir + "pc_"+ k +"_"+tname+".pcd", pcd)
+    o3d.io.write_point_cloud(gp_cloud_dir + "pc_"+ k +"_"+tname+"_0.09.pcd", pcd)
     t_record['test'].append(toc - tic)
     t_record['test_number'].append(len(test_xyz))
 

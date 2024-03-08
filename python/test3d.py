@@ -2,7 +2,7 @@ import copy
 import os
 import pickle
 import sys
-sys.path.append('C:/Users/zou/PycharmProjects/building-mapping/')
+sys.path.append('C:/Users/z77/PycharmProjects/building-mapping/')
 
 from facade import Facade
 
@@ -30,7 +30,7 @@ def load_file(filepath):
     return my_dict
 
 
-def load_map(filepath, id=0):
+def load_map(filepath, id=0, ifdirect=False):
     # facade groups
     my_files = load_file(filepath)
     building_group = []
@@ -41,8 +41,11 @@ def load_map(filepath, id=0):
         # file directory
         # facade intermediate results
         facade_dir = dir + 'output/facades_intermediate/'
-        if 'output' not in os.listdir(dir):
-            continue
+        if ifdirect:
+            facade_dir = dir
+        else:
+            if 'output' not in os.listdir(dir):
+                continue
         # start parsing
         # load facades from files
         with open(facade_dir + 'groups' + '.pkl', 'rb') as f:  # open file with write-mode
@@ -130,12 +133,15 @@ def v_to_sdf(v, vvar, lamda):
 
 def main():
 
-    filepath = "C:/Users/zou/source/repos/susiezou/ransac_app/results_0428_amk_new/"
-    buildings = load_map(filepath, id=8)
+    filepath = "D:/gpis_25d/"
+    testdata = "D:/localization/julia_map/building_seg/"
+    buildings = load_map(filepath, id=8, ifdirect=True)
     t_record = {}
     t_record['building'] = []
+    t_record['train_number'] = []
     t_record['train'] = []
-    t_record['test'] = []; t_record['test_number'] = []
+    t_record['test_number'] = []
+    t_record['test'] = [];
     tname = 'GPIS2'
     bias = 0.2
 
@@ -163,11 +169,9 @@ def main():
         i = 0
         gp_cloud_dir = filepath + str(building[0]) + '/output/gpismap/meta_data/'
         os.makedirs(gp_cloud_dir, exist_ok=True)
-        test_xyz = np.array(o3d.io.read_point_cloud("C:/Users/zou/data/localization/julia_map/building_seg/" + str(building[0]) +
-                                    "/output/bgk/resolution_0.09/test_pts.pcd").points)
-        t_train = {}
-        t_train['train'] = []
-        t_train['train_number'] = []
+        test_xyz = np.array(o3d.io.read_point_cloud(testdata + str(building[0]) +
+                                    "/output/bgk/resolution_0.05/test_pts.pcd").points)
+        t_train = np.array([0, 0])
         for faca in faca_group:
             pts_global = faca.pts_local @ (faca.trans_para.uvk).T
             trans_local = np.mean(faca.pts_local, axis=0).reshape(1, 3) + [f, 0, 0]
@@ -189,8 +193,8 @@ def main():
             gp.update(I.astype(np.float32), tr, Rot)
             toc = time.perf_counter()
             print(f"Elapsed time: {toc - tic:0.4f} seconds...")
-            t_train['train'].append(toc - tic)
-            t_train['train_number'].append(len(pts_local))
+            t_train[1]+=(toc - tic)
+            t_train[0]+=(len(pts_local))
 
             # testing:
             # test_xyz = generate_test_point(I, f, tr, faca.trans_para, max_resol=0.05, inside_num=2)
@@ -208,9 +212,10 @@ def main():
         pcd.normals = o3d.utility.Vector3dVector(world_n)
         # save .pcd
         pcd.translate(faca.trans_para.trans)
-        o3d.io.write_point_cloud(gp_cloud_dir + "pc_depth_"+tname+"_0.09.pcd", pcd)
+        o3d.io.write_point_cloud(gp_cloud_dir + "pc_depth_"+tname+"_0.05.pcd", pcd)
         t_record['building'].append(building[0])
-        t_record['train'].append(t_train)
+        t_record['train'].append(t_train[1])
+        t_record['train_number'].append(t_train[0])
         t_record['test'].append(toc - tic)
         t_record['test_number'].append(len(test_xyz))
 
