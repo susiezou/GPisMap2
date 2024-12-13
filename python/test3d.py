@@ -201,7 +201,7 @@ def main():
         tic = time.perf_counter()
         sdf, var = show_mesh_3d(gp, (test_xyz[:, 0], test_xyz[:,1], test_xyz[:, 2]), bias=bias)
         if gp.loggp:
-            sdf, var = v_to_sdf(sdf, var, 20)
+            sdf, var = v_to_sdf(sdf, var, 10)
         toc = time.perf_counter()
         print(f"Test time: {toc - tic:0.4f} seconds...")
         pcd = o3d.geometry.PointCloud()
@@ -212,7 +212,7 @@ def main():
         pcd.normals = o3d.utility.Vector3dVector(world_n)
         # save .pcd
         pcd.translate(faca.trans_para.trans)
-        o3d.io.write_point_cloud(gp_cloud_dir + "pc_depth_"+tname+"_0.09.pcd", pcd)
+        o3d.io.write_point_cloud(gp_cloud_dir + "pc_depth_"+tname+"_0.09_lamda10.pcd", pcd)
         t_record['building'].append(building[0])
         t_record['train'].append(t_train[1])
         t_record['train_number'].append(t_train[0])
@@ -222,7 +222,7 @@ def main():
         gp.reset()
     input("Press Enter to continue...")
 
-    with open(filepath + 'time_record_' + tname + '.pkl', 'wb') as fp:
+    with open(filepath + 'time_record_' + tname + '_lamda10.pkl', 'wb') as fp:
         pickle.dump(t_record, fp)
 
     input("Press Enter to end...")

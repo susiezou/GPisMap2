@@ -9,9 +9,9 @@ import ctypes
 import platform
 import multiprocessing
 
-loggpis = False
+loggpis = True
 if loggpis:
-    mapdll = 'loggpis_Dll.dll'
+    mapdll = 'loggpis_lamda10.dll'
 else:
     mapdll = 'gpismap2_Dll.dll'
 

@@ -90,7 +90,7 @@
 #define GPISMAP3_OBS_VAR_THRE   0.04
 #define GPISMAP3_MIN_POS_NOISE  1e-3
 #define GPISMAP3_MIN_GRAD_NOISE 1e-2
-#define GPISMAP3_MAP_SCALE      0.05*sqrt(3)  // 0.04
+#define GPISMAP3_MAP_SCALE      0.0125*sqrt(3)  // 0.04
 #define GPISMAP3_MAP_NOISE      5e-3
 
 /*-----------------------------------------------------------------------------
